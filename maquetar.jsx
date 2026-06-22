@@ -76,10 +76,10 @@ var Clasificador = (function() {
     }
 
     return {
-        clasificar: function(ancho, alto) {
+        clasificar: function(ancho, alto, tolerancias) {
             var catalogo = Medidas.obtenerCatalogo();
-            var tolH = Medidas.toleranciaHorizontal;
-            var tolV = Medidas.toleranciaVertical;
+            var tolH = (tolerancias && tolerancias.horizontal !== undefined) ? tolerancias.horizontal : 2;
+            var tolV = (tolerancias && tolerancias.vertical !== undefined) ? tolerancias.vertical : 2;
             return determinarTamanio(ancho, alto, catalogo, tolH, tolV);
         }
     };
@@ -307,9 +307,19 @@ var Validador = (function() {
 
 var Procesador = (function() {
 
+    var OPciones = {
+        tolerancias: { horizontal: 2, vertical: 2 }
+    };
+
+    function configurar(config) {
+        if (config.tolerancias) {
+            OPciones.tolerancias = config.tolerancias;
+        }
+    }
+
     function analizarElemento(obj) {
         var dim = InDesign.medirElemento(obj);
-        var categoria = Clasificador.clasificar(dim.ancho, dim.alto);
+        var categoria = Clasificador.clasificar(dim.ancho, dim.alto, OPciones.tolerancias);
         Depurador.registrar("Elemento: " + dim.ancho.toFixed(2) + " x " + dim.alto.toFixed(2) + " mm -> " + categoria);
         return {
             categoria: categoria,
@@ -349,6 +359,7 @@ var Procesador = (function() {
     }
 
     return {
+        configurar: configurar,
         procesarSeleccion: procesarSeleccion
     };
 
