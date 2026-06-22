@@ -291,26 +291,17 @@ var Depurador = (function() {
 
 var Validador = (function() {
 
-    function validarEntorno() {
-        Depurador.registrar("=== INICIO DEPURACIÓN ===");
+    function validarDocumento() {
+        return InDesign.hayDocumentoAbierto();
+    }
 
-        if (!InDesign.hayDocumentoAbierto()) {
-            Depurador.registrar("ERROR: No hay documento abierto.");
-            Depurador.mostrar();
-            return false;
-        }
-
-        if (!InDesign.hayElementosSeleccionados()) {
-            Depurador.registrar("ERROR: No hay elementos seleccionados.");
-            Depurador.mostrar();
-            return false;
-        }
-
-        return true;
+    function validarSeleccion() {
+        return InDesign.hayElementosSeleccionados();
     }
 
     return {
-        validarEntorno: validarEntorno
+        validarDocumento: validarDocumento,
+        validarSeleccion: validarSeleccion
     };
 
 })();
@@ -394,8 +385,19 @@ var Presentador = (function() {
 
 function ejecutar() {
     Depurador.limpiar();
+    Depurador.registrar("=== INICIO DEPURACIÓN ===");
 
-    if (!Validador.validarEntorno()) return;
+    if (!Validador.validarDocumento()) {
+        Depurador.registrar("ERROR: No hay documento abierto.");
+        Depurador.mostrar();
+        return;
+    }
+
+    if (!Validador.validarSeleccion()) {
+        Depurador.registrar("ERROR: No hay elementos seleccionados.");
+        Depurador.mostrar();
+        return;
+    }
 
     var resultados = Procesador.procesarSeleccion();
 
