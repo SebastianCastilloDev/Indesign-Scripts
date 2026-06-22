@@ -8,7 +8,7 @@
 
 ## Estructura del proyecto
 
-Cada script autocontenido reside en un único `.jsx`. Cuando un script excede ~50 líneas y tiene varias responsabilidades, se organiza en **bounded contexts** autocontenidos mediante **IIFEs** (Immediately Invoked Function Expressions).
+Cada script autocontenido reside en un único `.jsx` en la raíz. Cuando un script excede ~50 líneas y tiene varias responsabilidades, se organiza en **módulos** autocontenidos mediante **IIFEs** (Immediately Invoked Function Expressions), cada uno en su propio archivo dentro de una carpeta con el mismo nombre del script raíz.
 
 ```
 var Contexto = (function() {
@@ -18,18 +18,65 @@ var Contexto = (function() {
 })();
 ```
 
-## Bounded contexts (maquetar.jsx)
+El archivo raíz (entry point) es delgado: solo contiene la configuración (`CONFIG`), los `#include` de los módulos en orden de dependencia, y la llamada al orquestador.
 
-1. **CalculoDeMedidas** — constantes de tamaño, catálogo, derivación (Media Carta, Cuarto Carta desde Carta).
-2. **ClasificacionDeFormato** — lógica pura de clasificación: recibe dimensiones+tolerancias, compara contra el catálogo, retorna nombre de categoría.
-3. **Unidades** — conversión entre unidades del documento y mm/puntos; ofrece `ejecutarConUnidadesEnPuntos()` que fuerza unidades temporales para evitar inconsistencias.
-4. **AdaptadorInDesign** — capa de infraestructura: toda interacción directa con la API de InDesign (guias, selección, marcos de texto, bounds).
-5. **Depuracion** — registro de mensajes en un text frame debajo de la primera página.
-6. **TrazadoDeGuias** — cálculo de centro de página y creación de guías (horizontal y/o vertical).
-7. **ValidacionDeEjecucion** — validación de precondiciones (documento abierto, selección existente).
-8. **MaquetacionPorCategoria** — orquestación del análisis de cada elemento y aplicación de acciones según categoría.
-9. **PresentacionDeResultados** — volcado de resultados al depurador.
-10. **Aplicacion** — orquestador principal único: `iniciarDepuracion → validarEntorno → configurarProcesos → ejecutarFlujoPrincipal → finalizarDepuracion`.
+```
+// maquetar.jsx
+var CONFIG = { ... };
+#include "maquetar/Unidades.jsx"
+#include "maquetar/CalculoDeMedidas.jsx"
+...
+Aplicacion.ejecutar(CONFIG);
+```
+
+### Orden de inclusión
+
+Los `#include` deben respetar el grafo de dependencias. El orden actual para `maquetar/`:
+
+1. `Unidades.jsx` — sin dependencias
+2. `CalculoDeMedidas.jsx` — sin dependencias
+3. `ClasificacionDeFormato.jsx` → CalculoDeMedidas
+4. `AdaptadorInDesign.jsx` → Unidades
+5. `Depuracion.jsx` → Unidades, AdaptadorInDesign
+6. `TrazadoDeGuias.jsx` → Unidades, AdaptadorInDesign, Depuracion
+7. `ValidacionDeEjecucion.jsx` → AdaptadorInDesign, Depuracion
+8. `MaquetacionPorCategoria.jsx` → AdaptadorInDesign, ClasificacionDeFormato, Depuracion, TrazadoDeGuias
+9. `PresentacionDeResultados.jsx` → Depuracion
+10. `Aplicacion.jsx` → todos los anteriores
+
+Si un `#include` falla (p. ej. en InDesign 2025 o anterior que no lo soporte desde el panel Scripts), concatenar manualmente el contenido de los módulos directamente en el entry point.
+
+## Módulos (maquetar/)
+
+### `maquetar/Unidades.jsx`
+Conversión entre unidades de InDesign y mm. Ofrece `ejecutarConUnidadesEnPuntos()` que fuerza las reglas del documento a puntos temporalmente, ejecuta una función y restaura las unidades originales. Las constantes de conversión se almacenan en `FACTOR_A_MM`.
+
+### `maquetar/CalculoDeMedidas.jsx`
+Catálogo de tamaños: **Carta** (215.9×279.4 mm), **Media Carta** (mitad del alto de Carta × ancho de Carta), **Cuarto Carta** (media anchura × media altura). Expone `obtenerCatalogo()` para alimentar al clasificador.
+
+### `maquetar/ClasificacionDeFormato.jsx`
+Lógica pura de clasificación. Recibe dimensiones en mm y tolerancias, compara contra el catálogo (directo y rotado), retorna el nombre de la categoría de menor área que cabe. Si ningún formato cabe, retorna `null`.
+
+### `maquetar/AdaptadorInDesign.jsx`
+Capa de infraestructura. Toda interacción directa con la API de InDesign: verificar documento/selección, leer `geometricBounds`, crear guías (con fallback progresivo de `HorizontalOrVertical`), crear marcos de texto. Los FourCharCodes de orientación se resuelven una vez al cargar el módulo.
+
+### `maquetar/Depuracion.jsx`
+Registro de mensajes en un array interno `LINEAS`. Al llamar `mostrar()`, crea un text frame debajo de la primera página con hasta 20 líneas de contenido. Sin `alert()` — toda salida va aquí.
+
+### `maquetar/TrazadoDeGuias.jsx`
+Cálculo del centro de la página activa (horizontal y vertical) y creación de guías. Ofrece `trazarSoloHorizontal(pagina)` y `trazarAmbosEjes(pagina)`. Las coordenadas se calculan desde `page.bounds`.
+
+### `maquetar/ValidacionDeEjecucion.jsx`
+Validación de precondiciones: documento abierto y selección existente. Retorna `false` si alguna falla y registra el error en `Depuracion`.
+
+### `maquetar/MaquetacionPorCategoria.jsx`
+Orquestación del análisis de cada elemento seleccionado: mide dimensiones, clasifica y aplica la acción según categoría (guía horizontal para Media Carta, ambos ejes para Cuarto Carta). Cada elemento se procesa con try-catch individual.
+
+### `maquetar/PresentacionDeResultados.jsx`
+Volcado final de resultados. Simplemente agrega "--- Fin del proceso ---" y llama a `Depuracion.mostrar()`.
+
+### `maquetar/Aplicacion.jsx`
+Orquestador principal único. Coordina el flujo completo: inicia depuración, ejecuta el flujo principal (con `ejecutarConUnidadesEnPuntos`), finaliza depuración, y captura errores fatales con try-catch global.
 
 ## Convenciones de nomenclatura
 
@@ -69,7 +116,8 @@ validarEntorno
 configurarProcesos
   └── pasa CONFIG a MaquetacionPorCategoria
 ejecutarFlujoPrincipal
-  └── procesarSeleccion → para cada elemento: analizar + aplicar accion segun categoria
+  └── ejecutarConUnidadesEnPuntos (forzar reglas a puntos)
+      └── procesarSeleccion → para cada elemento: analizar + aplicar accion segun categoria
   └── mostrarResultados
 finalizarDepuracion
   └── crear text frame debajo de la página
@@ -80,4 +128,4 @@ finalizarDepuracion
 - **Sin alert()**. Toda salida va al módulo `Depuracion`, que crea un text frame.
 - **try-catch** alrededor de operaciones con la API de InDesign que puedan fallar. Registrar en `Depuracion` en lugar de mostrar alertas.
 - **Configurable desde arriba**: `CONFIG` en la cabecera, inyectado a `Aplicacion.ejecutar(CONFIG)`. Los módulos internos no hardcodean valores.
-- **Sin dependencias externas**. Sin `#include`, sin `$.evalFile`. Cada script es un único archivo autocontenido.
+- **Sin dependencias externas**. Sin `$.evalFile`. Cada script es autocontenido: los módulos se cargan con `#include` desde el entry point (o se concatenan si `#include` no está disponible).

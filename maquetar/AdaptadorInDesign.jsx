@@ -79,6 +79,7 @@ var AdaptadorInDesign = (function() {
         obtenerSeleccion: obtenerSeleccion,
         obtenerPaginaActiva: obtenerPaginaActiva,
         medirElementoEnMilimetros: medirElementoEnMilimetros,
+        obtenerBounds: obtenerBounds,
         crearGuiaHorizontal: crearGuiaHorizontal,
         crearGuiaVertical: crearGuiaVertical,
         crearMarcoTexto: crearMarcoTexto,
