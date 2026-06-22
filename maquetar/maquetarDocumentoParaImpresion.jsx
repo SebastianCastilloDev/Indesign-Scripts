@@ -13,7 +13,7 @@ var MaquetarDocumentoParaImpresion = (function() {
                bounds[3] <= centroX;
     }
 
-    function duplicarSimetrico(obj, pagina) {
+    function duplicarHorizontal(obj, pagina) {
         var pBounds = pagina.bounds;
         var centroX = (pBounds[1] + pBounds[3]) / 2;
 
@@ -21,7 +21,7 @@ var MaquetarDocumentoParaImpresion = (function() {
         var nuevoLeft = 2 * centroX - bounds[3];
         var deltaX = nuevoLeft - bounds[1];
 
-        Depuracion.registrar("  DEBUG duplicarTrasladado:");
+        Depuracion.registrar("  DEBUG duplicarHorizontal:");
         Depuracion.registrar("    page bounds: [" + pBounds.join(", ") + "]");
         Depuracion.registrar("    centroX: " + centroX);
         Depuracion.registrar("    obj bounds: [" + bounds.join(", ") + "]");
@@ -38,6 +38,37 @@ var MaquetarDocumentoParaImpresion = (function() {
         return dup;
     }
 
+    function duplicarVertical(obj, pagina) {
+        var pBounds = pagina.bounds;
+        var centroY = (pBounds[0] + pBounds[2]) / 2;
+
+        var bounds = obj.geometricBounds;
+        var nuevoTop = 2 * centroY - bounds[2];
+        var deltaY = nuevoTop - bounds[0];
+
+        Depuracion.registrar("  DEBUG duplicarVertical:");
+        Depuracion.registrar("    page bounds: [" + pBounds.join(", ") + "]");
+        Depuracion.registrar("    centroY: " + centroY);
+        Depuracion.registrar("    obj bounds: [" + bounds.join(", ") + "]");
+        Depuracion.registrar("    nuevoTop: " + nuevoTop);
+        Depuracion.registrar("    deltaY: " + deltaY);
+
+        var dup = obj.duplicate();
+        dup.move(undefined, [0, deltaY]);
+
+        var dupBounds = dup.geometricBounds;
+        Depuracion.registrar("    dup bounds despues de mover: [" + dupBounds.join(", ") + "]");
+        Depuracion.registrar("    nuevo centroElementoY: " + ((dupBounds[0] + dupBounds[2]) / 2));
+
+        return dup;
+    }
+
+    function duplicarEnCuadrantes(obj, pagina) {
+        var dupHorizontal = duplicarHorizontal(obj, pagina);
+        duplicarVertical(obj, pagina);
+        duplicarVertical(dupHorizontal, pagina);
+    }
+
     function procesarElemento(obj, pagina) {
         TrazadoDeGuias.trazarAmbosEjes(pagina);
 
@@ -52,8 +83,8 @@ var MaquetarDocumentoParaImpresion = (function() {
             return false;
         }
 
-        duplicarSimetrico(obj, pagina);
-        Depuracion.registrar("Elemento duplicado simetricamente al cuadrante superior derecho.");
+        duplicarEnCuadrantes(obj, pagina);
+        Depuracion.registrar("Elemento duplicado a los cuadrantes restantes sin invertir contenido.");
         return true;
     }
 
@@ -98,7 +129,9 @@ var MaquetarDocumentoParaImpresion = (function() {
         procesar: procesar,
         procesarElemento: procesarElemento,
         estaEnCuadranteSuperiorIzquierdo: estaEnCuadranteSuperiorIzquierdo,
-        duplicarSimetrico: duplicarSimetrico
+        duplicarHorizontal: duplicarHorizontal,
+        duplicarVertical: duplicarVertical,
+        duplicarEnCuadrantes: duplicarEnCuadrantes
     };
 
 })();
