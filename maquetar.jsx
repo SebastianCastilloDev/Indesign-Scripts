@@ -386,10 +386,21 @@ var Presentador = (function() {
 })();
 
 // ====================================================================
+// CONFIGURACIÓN
+// ====================================================================
+
+var CONFIG = {
+    tolerancias: {
+        horizontal: 2,
+        vertical: 2
+    }
+};
+
+// ====================================================================
 // ORQUESTADOR
 // ====================================================================
 
-function ejecutar() {
+function ejecutar(config) {
     Depurador.limpiar();
     Depurador.registrar("=== INICIO DEPURACIÓN ===");
 
@@ -405,6 +416,7 @@ function ejecutar() {
         return;
     }
 
+    Procesador.configurar(config);
     var resultados = Procesador.procesarSeleccion();
 
     Presentador.volcarResultados(resultados);
@@ -415,4 +427,4 @@ function ejecutar() {
 // ENTRY POINT
 // ====================================================================
 
-ejecutar();
+ejecutar(CONFIG);
