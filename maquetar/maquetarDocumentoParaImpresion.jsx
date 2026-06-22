@@ -18,26 +18,21 @@ var MaquetarDocumentoParaImpresion = (function() {
         var centroX = (pBounds[1] + pBounds[3]) / 2;
 
         var bounds = obj.geometricBounds;
+        var nuevoLeft = 2 * centroX - bounds[3];
+        var deltaX = nuevoLeft - bounds[1];
 
-        Depuracion.registrar("  DEBUG duplicarSimetrico:");
+        Depuracion.registrar("  DEBUG duplicarTrasladado:");
         Depuracion.registrar("    page bounds: [" + pBounds.join(", ") + "]");
         Depuracion.registrar("    centroX: " + centroX);
         Depuracion.registrar("    obj bounds: [" + bounds.join(", ") + "]");
-
-        var newBounds = [
-            bounds[0],
-            2 * centroX - bounds[3],
-            bounds[2],
-            2 * centroX - bounds[1]
-        ];
-
-        Depuracion.registrar("    newBounds: [" + newBounds.join(", ") + "]");
+        Depuracion.registrar("    nuevoLeft: " + nuevoLeft);
+        Depuracion.registrar("    deltaX: " + deltaX);
 
         var dup = obj.duplicate();
-        dup.geometricBounds = newBounds;
+        dup.move(undefined, [deltaX, 0]);
 
         var dupBounds = dup.geometricBounds;
-        Depuracion.registrar("    dup bounds despues de asignar: [" + dupBounds.join(", ") + "]");
+        Depuracion.registrar("    dup bounds despues de mover: [" + dupBounds.join(", ") + "]");
         Depuracion.registrar("    nuevo centroElementoX: " + ((dupBounds[1] + dupBounds[3]) / 2));
 
         return dup;

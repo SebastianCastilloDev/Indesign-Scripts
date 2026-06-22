@@ -2,7 +2,7 @@ var Depuracion = (function() {
 
     var LINEAS = [];
     var LINEA_PUNTO = 8;
-    var CANTIDAD_LINEAS_MOSTRAR = 20;
+    var CANTIDAD_LINEAS_MOSTRAR = 1000;
 
     function limpiar() {
         LINEAS = [];
