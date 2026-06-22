@@ -253,17 +253,16 @@ var Depurador = (function() {
         try {
             var doc = app.activeDocument;
             var pagina = doc.pages[0];
-            var boundsPagina = pagina.bounds;
-            var anchoPagina = boundsPagina[3] - boundsPagina[1];
-            var finPagina = boundsPagina[2];
+            var unidad = Unidades.obtenerUnidadActual();
+
+            var boundsPagina_mm = pagina.bounds;
+            var top = Unidades.convertirDeMilimetros(boundsPagina_mm[2] + 10, unidad);
+            var left = Unidades.convertirDeMilimetros(boundsPagina_mm[1], unidad);
+            var bottom = Unidades.convertirDeMilimetros(boundsPagina_mm[2] + 10 + (textos.length * 4), unidad);
+            var right = Unidades.convertirDeMilimetros(boundsPagina_mm[3], unidad);
 
             var marco = pagina.textFrames.add();
-            marco.geometricBounds = [
-                finPagina + 10,
-                boundsPagina[1],
-                finPagina + 10 + (textos.length * 4),
-                boundsPagina[1] + anchoPagina
-            ];
+            marco.geometricBounds = [top, left, bottom, right];
             marco.contents = textos.join("\n");
             marco.texts[0].pointSize = 7;
         } catch (e) {}
