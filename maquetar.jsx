@@ -21,6 +21,7 @@ var CONFIG = {
 #include "maquetar/Depuracion.jsx"
 #include "maquetar/TrazadoDeGuias.jsx"
 #include "maquetar/ValidacionDeEjecucion.jsx"
+#include "maquetar/maquetarDocumentoParaImpresion.jsx"
 #include "maquetar/MaquetacionPorCategoria.jsx"
 #include "maquetar/PresentacionDeResultados.jsx"
 #include "maquetar/Aplicacion.jsx"

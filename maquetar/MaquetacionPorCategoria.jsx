@@ -28,12 +28,7 @@ var MaquetacionPorCategoria = (function() {
             }
             TrazadoDeGuias.trazarSoloHorizontal(pagina);
         } else if (categoria === CalculoDeMedidas.CUARTO_CARTA.nombre) {
-            var superposicion = ValidarSuperposicion.validarSuperposicionObjetoConLineaGuia(obj, pagina);
-            if (superposicion !== null) {
-                alert("El elemento seleccionado está encima de la gu\u00EDa " + superposicion + " del centro de p\u00E1gina.");
-                return;
-            }
-            TrazadoDeGuias.trazarAmbosEjes(pagina);
+            MaquetarDocumentoParaImpresion.procesarElemento(obj, pagina);
         }
     }
 
