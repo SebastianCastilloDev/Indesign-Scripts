@@ -1,102 +1,179 @@
-// --- CONFIGURACIÓN ---
+// ====================================================================
+// MÓDULO: Medidas
+// ====================================================================
 
-var CARTA = {
-    nombre: "Carta",
-    ancho: 215.9,
-    alto: 279.4
-};
+var Medidas = (function() {
 
-function calcularMediaCarta() {
-    return {
-        nombre: "Media Carta",
-        ancho: CARTA.alto / 2,
-        alto: CARTA.ancho
+    var CARTA = {
+        nombre: "Carta",
+        ancho: 215.9,
+        alto: 279.4
     };
-}
 
-function calcularCuartoCarta() {
+    function calcularMediaCarta() {
+        return {
+            nombre: "Media Carta",
+            ancho: CARTA.alto / 2,
+            alto: CARTA.ancho
+        };
+    }
+
+    function calcularCuartoCarta() {
+        return {
+            nombre: "Cuarto Carta",
+            ancho: CARTA.ancho / 2,
+            alto: CARTA.alto / 2
+        };
+    }
+
+    var MEDIA_CARTA = calcularMediaCarta();
+    var CUARTO_CARTA = calcularCuartoCarta();
+
+    var toleranciaHorizontal = 2;
+    var toleranciaVertical = 2;
+
     return {
-        nombre: "Cuarto Carta",
-        ancho: CARTA.ancho / 2,
-        alto: CARTA.alto / 2
+        CARTA: CARTA,
+        MEDIA_CARTA: MEDIA_CARTA,
+        CUARTO_CARTA: CUARTO_CARTA,
+        toleranciaHorizontal: toleranciaHorizontal,
+        toleranciaVertical: toleranciaVertical,
+        obtenerCatalogo: function() {
+            return [CARTA, MEDIA_CARTA, CUARTO_CARTA];
+        }
     };
-}
 
-var MEDIA_CARTA = calcularMediaCarta();
-var CUARTO_CARTA = calcularCuartoCarta();
+})();
 
-var CONFIG = {
-    toleranciaHorizontal: 2,
-    toleranciaVertical: 2,
-    tamanos: [
-        CARTA,
-        MEDIA_CARTA,
-        CUARTO_CARTA
-    ]
-};
+// ====================================================================
+// MÓDULO: Clasificador
+// ====================================================================
 
-// --- UTILIDADES ---
+var Clasificador = (function() {
 
-function calcularArea(ancho, alto) {
-    return ancho * alto;
-}
+    function calcularArea(ancho, alto) {
+        return ancho * alto;
+    }
 
-function medirElemento(obj) {
-    var bounds = obj.geometricBounds;
-    return {
-        ancho: Math.abs(bounds[3] - bounds[1]),
-        alto: Math.abs(bounds[2] - bounds[0])
-    };
-}
+    function cabeEnDimension(ancho, alto, refAncho, refAlto, tolH, tolV) {
+        return (ancho <= refAncho + tolH && alto <= refAlto + tolV);
+    }
 
-function cabeEnDimension(ancho, alto, refAncho, refAlto, tolH, tolV) {
-    return (ancho <= refAncho + tolH && alto <= refAlto + tolV);
-}
+    function determinarTamanio(ancho, alto, catalogo, tolH, tolV) {
+        var mejor = null;
+        var menorArea = Infinity;
 
-// --- CLASIFICADOR ---
+        for (var i = 0; i < catalogo.length; i++) {
+            var t = catalogo[i];
+            var areaRef = calcularArea(t.ancho, t.alto);
 
-function determinarTamanio(ancho, alto, config) {
-    var mejor = null;
-    var menorArea = Infinity;
+            var entraDirecto = cabeEnDimension(ancho, alto, t.ancho, t.alto, tolH, tolV);
+            var entraRotado = cabeEnDimension(ancho, alto, t.alto, t.ancho, tolH, tolV);
 
-    for (var i = 0; i < config.tamanos.length; i++) {
-        var t = config.tamanos[i];
-        var areaRef = calcularArea(t.ancho, t.alto);
-
-        var entraDirecto = cabeEnDimension(ancho, alto, t.ancho, t.alto, config.toleranciaHorizontal, config.toleranciaVertical);
-        var entraRotado = cabeEnDimension(ancho, alto, t.alto, t.ancho, config.toleranciaHorizontal, config.toleranciaVertical);
-
-        if (entraDirecto || entraRotado) {
-            if (areaRef < menorArea) {
-                menorArea = areaRef;
-                mejor = t.nombre;
+            if (entraDirecto || entraRotado) {
+                if (areaRef < menorArea) {
+                    menorArea = areaRef;
+                    mejor = t.nombre;
+                }
             }
         }
+        return mejor;
     }
-    return mejor;
-}
 
-// --- VALIDACIONES ---
+    return {
+        clasificar: function(ancho, alto) {
+            var catalogo = Medidas.obtenerCatalogo();
+            var tolH = Medidas.toleranciaHorizontal;
+            var tolV = Medidas.toleranciaVertical;
+            return determinarTamanio(ancho, alto, catalogo, tolH, tolV);
+        }
+    };
 
-function hayDocumentoAbierto() {
-    return app.documents.length > 0;
-}
+})();
 
-function hayElementosSeleccionados() {
-    return app.selection.length > 0;
-}
+// ====================================================================
+// MÓDULO: InDesign
+// ====================================================================
 
-function obtenerSeleccionActual() {
-    return app.selection;
-}
+var InDesign = (function() {
 
-// --- CONSTRUCCIÓN DE RESULTADOS ---
+    function hayDocumentoAbierto() {
+        return app.documents.length > 0;
+    }
 
-function clasificarElementos(elementos, config) {
+    function hayElementosSeleccionados() {
+        return app.selection.length > 0;
+    }
+
+    function obtenerSeleccionActual() {
+        return app.selection;
+    }
+
+    function medirElemento(obj) {
+        var bounds = obj.geometricBounds;
+        return {
+            ancho: Math.abs(bounds[3] - bounds[1]),
+            alto: Math.abs(bounds[2] - bounds[0])
+        };
+    }
+
+    return {
+        hayDocumentoAbierto: hayDocumentoAbierto,
+        hayElementosSeleccionados: hayElementosSeleccionados,
+        obtenerSeleccionActual: obtenerSeleccionActual,
+        medirElemento: medirElemento
+    };
+
+})();
+
+// ====================================================================
+// MÓDULO: Presentador
+// ====================================================================
+
+var Presentador = (function() {
+
+    function formatearResultados(resultados) {
+        var lineas = [];
+        for (var i = 0; i < resultados.length; i++) {
+            var r = resultados[i];
+            lineas.push("Elemento " + r.indice + ": " + r.categoria + " (" + r.ancho.toFixed(2) + " x " + r.alto.toFixed(2) + ")");
+        }
+        return lineas.join("\n");
+    }
+
+    function mostrarMensaje(mensaje) {
+        alert(mensaje);
+    }
+
+    return {
+        formatearResultados: formatearResultados,
+        mostrarMensaje: mostrarMensaje
+    };
+
+})();
+
+// ====================================================================
+// ORQUESTADOR
+// ====================================================================
+
+function ejecutar() {
+
+    if (!InDesign.hayDocumentoAbierto()) {
+        Presentador.mostrarMensaje("No hay ningún documento abierto.");
+        return;
+    }
+
+    if (!InDesign.hayElementosSeleccionados()) {
+        Presentador.mostrarMensaje("No hay ningún elemento seleccionado.");
+        return;
+    }
+
+    var seleccion = InDesign.obtenerSeleccionActual();
     var resultados = [];
-    for (var i = 0; i < elementos.length; i++) {
-        var dim = medirElemento(elementos[i]);
-        var categoria = determinarTamanio(dim.ancho, dim.alto, config);
+
+    for (var i = 0; i < seleccion.length; i++) {
+        var dim = InDesign.medirElemento(seleccion[i]);
+        var categoria = Clasificador.clasificar(dim.ancho, dim.alto);
         resultados.push({
             indice: i + 1,
             categoria: categoria || "Sin categoría",
@@ -104,41 +181,13 @@ function clasificarElementos(elementos, config) {
             alto: dim.alto
         });
     }
-    return resultados;
+
+    var mensaje = Presentador.formatearResultados(resultados);
+    Presentador.mostrarMensaje(mensaje);
 }
 
-function formatearResultados(resultados) {
-    var lineas = [];
-    for (var i = 0; i < resultados.length; i++) {
-        var r = resultados[i];
-        lineas.push("Elemento " + r.indice + ": " + r.categoria + " (" + r.ancho.toFixed(2) + " x " + r.alto.toFixed(2) + ")");
-    }
-    return lineas.join("\n");
-}
+// ====================================================================
+// ENTRY POINT
+// ====================================================================
 
-function mostrarMensaje(mensaje) {
-    alert(mensaje);
-}
-
-// --- ORQUESTADOR ---
-
-function ejecutar(config) {
-    if (!hayDocumentoAbierto()) {
-        mostrarMensaje("No hay ningún documento abierto.");
-        return;
-    }
-
-    if (!hayElementosSeleccionados()) {
-        mostrarMensaje("No hay ningún elemento seleccionado.");
-        return;
-    }
-
-    var seleccion = obtenerSeleccionActual();
-    var resultadosClasificados = clasificarElementos(seleccion, config);
-    var mensaje = formatearResultados(resultadosClasificados);
-
-    mostrarMensaje(mensaje);
-}
-
-// --- ENTRY POINT ---
-ejecutar(CONFIG);
+ejecutar();
