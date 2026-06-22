@@ -40,7 +40,7 @@ if (app.documents.length > 0) {
             [bordeDerecho, y]
         ];
 
-        alert("Listo. Se generaron dos líneas en la parte superior de la página activa.");
+        app.select([lineaIzq, lineaDer]);
     } catch (e) {
         alert("No se pudo obtener la página activa. Asegúrate de tener una página seleccionada.");
     }
