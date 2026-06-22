@@ -1,20 +1,47 @@
 // --- CONFIGURACIÓN ---
+
+var CARTA = {
+    nombre: "Carta",
+    ancho: 215.9,
+    alto: 279.4
+};
+
+function calcularMediaCarta() {
+    return {
+        nombre: "Media Carta",
+        ancho: CARTA.alto / 2,
+        alto: CARTA.ancho
+    };
+}
+
+function calcularCuartoCarta() {
+    return {
+        nombre: "Cuarto Carta",
+        ancho: CARTA.ancho / 2,
+        alto: CARTA.alto / 2
+    };
+}
+
+var MEDIA_CARTA = calcularMediaCarta();
+var CUARTO_CARTA = calcularCuartoCarta();
+
 var CONFIG = {
     toleranciaHorizontal: 2,
     toleranciaVertical: 2,
     tamanos: [
-        { nombre: "Carta",        ancho: 215.9,  alto: 279.4 },
-        { nombre: "Media Carta",  ancho: 139.7,  alto: 215.9 },
-        { nombre: "Cuarto Carta", ancho: 107.95, alto: 139.7 }
+        CARTA,
+        MEDIA_CARTA,
+        CUARTO_CARTA
     ]
 };
 
 // --- UTILIDADES ---
-function area(ancho, alto) {
+
+function calcularArea(ancho, alto) {
     return ancho * alto;
 }
 
-function obtenerDimensiones(obj) {
+function medirElemento(obj) {
     var bounds = obj.geometricBounds;
     return {
         ancho: Math.abs(bounds[3] - bounds[1]),
@@ -22,21 +49,24 @@ function obtenerDimensiones(obj) {
     };
 }
 
-function cabeDentro(ancho, alto, refAncho, refAlto, tolH, tolV) {
+function cabeEnDimension(ancho, alto, refAncho, refAlto, tolH, tolV) {
     return (ancho <= refAncho + tolH && alto <= refAlto + tolV);
 }
 
 // --- CLASIFICADOR ---
-function clasificar(ancho, alto, config) {
+
+function determinarTamanio(ancho, alto, config) {
     var mejor = null;
     var menorArea = Infinity;
 
     for (var i = 0; i < config.tamanos.length; i++) {
         var t = config.tamanos[i];
-        var areaRef = area(t.ancho, t.alto);
+        var areaRef = calcularArea(t.ancho, t.alto);
 
-        if (cabeDentro(ancho, alto, t.ancho, t.alto, config.toleranciaHorizontal, config.toleranciaVertical) ||
-            cabeDentro(ancho, alto, t.alto, t.ancho, config.toleranciaHorizontal, config.toleranciaVertical)) {
+        var entraDirecto = cabeEnDimension(ancho, alto, t.ancho, t.alto, config.toleranciaHorizontal, config.toleranciaVertical);
+        var entraRotado = cabeEnDimension(ancho, alto, t.alto, t.ancho, config.toleranciaHorizontal, config.toleranciaVertical);
+
+        if (entraDirecto || entraRotado) {
             if (areaRef < menorArea) {
                 menorArea = areaRef;
                 mejor = t.nombre;
@@ -46,34 +76,68 @@ function clasificar(ancho, alto, config) {
     return mejor;
 }
 
-// --- ORQUESTADOR ---
-function ejecutar(config) {
-    if (app.documents.length === 0) {
-        alert("No hay ningún documento abierto.");
-        return;
-    }
+// --- VALIDACIONES ---
 
-    var sel = app.selection;
-    if (sel.length === 0) {
-        alert("No hay ningún elemento seleccionado.");
-        return;
-    }
+function hayDocumentoAbierto() {
+    return app.documents.length > 0;
+}
 
+function hayElementosSeleccionados() {
+    return app.selection.length > 0;
+}
+
+function obtenerSeleccionActual() {
+    return app.selection;
+}
+
+// --- CONSTRUCCIÓN DE RESULTADOS ---
+
+function clasificarElementos(elementos, config) {
     var resultados = [];
-    for (var j = 0; j < sel.length; j++) {
-        var dim = obtenerDimensiones(sel[j]);
-        var nombre = clasificar(dim.ancho, dim.alto, config);
-        var linea = "Elemento " + (j + 1) + ": ";
-        if (nombre) {
-            linea += nombre;
-        } else {
-            linea += "Sin categoría";
-        }
-        linea += " (" + dim.ancho.toFixed(2) + " x " + dim.alto.toFixed(2) + ")";
-        resultados.push(linea);
+    for (var i = 0; i < elementos.length; i++) {
+        var dim = medirElemento(elementos[i]);
+        var categoria = determinarTamanio(dim.ancho, dim.alto, config);
+        resultados.push({
+            indice: i + 1,
+            categoria: categoria || "Sin categoría",
+            ancho: dim.ancho,
+            alto: dim.alto
+        });
+    }
+    return resultados;
+}
+
+function formatearResultados(resultados) {
+    var lineas = [];
+    for (var i = 0; i < resultados.length; i++) {
+        var r = resultados[i];
+        lineas.push("Elemento " + r.indice + ": " + r.categoria + " (" + r.ancho.toFixed(2) + " x " + r.alto.toFixed(2) + ")");
+    }
+    return lineas.join("\n");
+}
+
+function mostrarMensaje(mensaje) {
+    alert(mensaje);
+}
+
+// --- ORQUESTADOR ---
+
+function ejecutar(config) {
+    if (!hayDocumentoAbierto()) {
+        mostrarMensaje("No hay ningún documento abierto.");
+        return;
     }
 
-    alert(resultados.join("\n"));
+    if (!hayElementosSeleccionados()) {
+        mostrarMensaje("No hay ningún elemento seleccionado.");
+        return;
+    }
+
+    var seleccion = obtenerSeleccionActual();
+    var resultadosClasificados = clasificarElementos(seleccion, config);
+    var mensaje = formatearResultados(resultadosClasificados);
+
+    mostrarMensaje(mensaje);
 }
 
 // --- ENTRY POINT ---
