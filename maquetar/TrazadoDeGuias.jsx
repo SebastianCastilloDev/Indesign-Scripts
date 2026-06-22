@@ -1,39 +1,30 @@
-var TrazadoDeGuias = (function() {
+// ====================================================================
+// NUCLEO PURO (cálculo de centros)
+// ====================================================================
 
-    function calcularCentroHorizontal(pagina) {
-        var bounds = pagina.bounds;
-        return (bounds[1] + bounds[3]) / 2;
-    }
+#include "lib/geometria/trazadoDeGuias.js"
 
-    function calcularCentroVertical(pagina) {
-        var bounds = pagina.bounds;
-        return (bounds[0] + bounds[2]) / 2;
-    }
+// ====================================================================
+// CAPA InDesign (API-dependent)
+// ====================================================================
 
-    function trazarHorizontal(pagina) {
-        var centroY = calcularCentroVertical(pagina);
-        return AdaptadorInDesign.crearGuiaHorizontal(pagina, centroY);
-    }
+TrazadoDeGuias.trazarHorizontal = function(pagina) {
+    var centroY = TrazadoDeGuias.calcularCentroVertical(pagina);
+    return AdaptadorInDesign.crearGuiaHorizontal(pagina, centroY);
+};
 
-    function trazarVertical(pagina) {
-        var centroX = calcularCentroHorizontal(pagina);
-        return AdaptadorInDesign.crearGuiaVertical(pagina, centroX);
-    }
+TrazadoDeGuias.trazarVertical = function(pagina) {
+    var centroX = TrazadoDeGuias.calcularCentroHorizontal(pagina);
+    return AdaptadorInDesign.crearGuiaVertical(pagina, centroX);
+};
 
-    function trazarSoloHorizontal(pagina) {
-        Depuracion.registrar("Trazando guía horizontal en centro de página");
-        trazarHorizontal(pagina);
-    }
+TrazadoDeGuias.trazarSoloHorizontal = function(pagina) {
+    Depuracion.registrar("Trazando guía horizontal en centro de página");
+    TrazadoDeGuias.trazarHorizontal(pagina);
+};
 
-    function trazarAmbosEjes(pagina) {
-        Depuracion.registrar("Trazando guías horizontal y vertical en centro de página");
-        trazarHorizontal(pagina);
-        trazarVertical(pagina);
-    }
-
-    return {
-        trazarSoloHorizontal: trazarSoloHorizontal,
-        trazarAmbosEjes: trazarAmbosEjes
-    };
-
-})();
+TrazadoDeGuias.trazarAmbosEjes = function(pagina) {
+    Depuracion.registrar("Trazando guías horizontal y vertical en centro de página");
+    TrazadoDeGuias.trazarHorizontal(pagina);
+    TrazadoDeGuias.trazarVertical(pagina);
+};

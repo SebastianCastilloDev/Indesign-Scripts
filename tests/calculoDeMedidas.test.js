@@ -1,4 +1,4 @@
-const CalculoDeMedidas = require("../maquetar/lib/calculoDeMedidas.js");
+const CalculoDeMedidas = require("../maquetar/lib/formatos/calculoDeMedidas.js");
 
 describe("CalculoDeMedidas", function() {
 

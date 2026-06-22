@@ -1,42 +1,40 @@
-var AdaptadorInDesign = (function() {
+// ====================================================================
+// NUCLEO PURO (resolución de enumeradores)
+// ====================================================================
 
-    var ORIENTACION_HORIZONTAL = obtenerOrientacionHorizontal();
-    var ORIENTACION_VERTICAL = obtenerOrientacionVertical();
+#include "lib/adaptadores/adaptadorInDesign.js"
 
-    function obtenerOrientacionHorizontal() {
-        if (typeof HorizontalOrVertical !== "undefined" && HorizontalOrVertical.HORIZONTAL !== undefined) return HorizontalOrVertical.HORIZONTAL;
-        if (typeof HorizontalOrVertical !== "undefined" && HorizontalOrVertical.horizontal !== undefined) return HorizontalOrVertical.horizontal;
-        return 1752332916;
-    }
+// ====================================================================
+// CAPA InDesign (API-dependent)
+// ====================================================================
 
-    function obtenerOrientacionVertical() {
-        if (typeof HorizontalOrVertical !== "undefined" && HorizontalOrVertical.VERTICAL !== undefined) return HorizontalOrVertical.VERTICAL;
-        if (typeof HorizontalOrVertical !== "undefined" && HorizontalOrVertical.vertical !== undefined) return HorizontalOrVertical.vertical;
-        return 1986359924;
-    }
+(function() {
 
-    function hayDocumentoAbierto() {
+    var ORIENTACION_HORIZONTAL = AdaptadorInDesign.obtenerOrientacionHorizontal();
+    var ORIENTACION_VERTICAL = AdaptadorInDesign.obtenerOrientacionVertical();
+
+    AdaptadorInDesign.hayDocumentoAbierto = function() {
         return app.documents.length > 0;
-    }
+    };
 
-    function haySeleccion() {
+    AdaptadorInDesign.haySeleccion = function() {
         return app.selection.length > 0;
-    }
+    };
 
-    function obtenerSeleccion() {
+    AdaptadorInDesign.obtenerSeleccion = function() {
         return app.selection;
-    }
+    };
 
-    function obtenerPaginaActiva() {
+    AdaptadorInDesign.obtenerPaginaActiva = function() {
         return app.activeWindow.activePage;
-    }
+    };
 
-    function obtenerBounds(obj) {
+    AdaptadorInDesign.obtenerBounds = function(obj) {
         return obj.geometricBounds;
-    }
+    };
 
-    function medirElementoEnMilimetros(obj) {
-        var bounds = obtenerBounds(obj);
+    AdaptadorInDesign.medirElementoEnMilimetros = function(obj) {
+        var bounds = AdaptadorInDesign.obtenerBounds(obj);
         var unidadHorizontal = Unidades.obtenerUnidadHorizontal();
         var unidadVertical = Unidades.obtenerUnidadVertical();
 
@@ -44,7 +42,7 @@ var AdaptadorInDesign = (function() {
             ancho: Unidades.convertirAMilimetros(Math.abs(bounds[3] - bounds[1]), unidadHorizontal),
             alto: Unidades.convertirAMilimetros(Math.abs(bounds[2] - bounds[0]), unidadVertical)
         };
-    }
+    };
 
     function crearGuia(pagina, orientacion, posicion) {
         var guia = pagina.guides.add();
@@ -53,37 +51,24 @@ var AdaptadorInDesign = (function() {
         return guia;
     }
 
-    function crearGuiaHorizontal(pagina, posicionY) {
+    AdaptadorInDesign.crearGuiaHorizontal = function(pagina, posicionY) {
         return crearGuia(pagina, ORIENTACION_HORIZONTAL, posicionY);
-    }
+    };
 
-    function crearGuiaVertical(pagina, posicionX) {
+    AdaptadorInDesign.crearGuiaVertical = function(pagina, posicionX) {
         return crearGuia(pagina, ORIENTACION_VERTICAL, posicionX);
-    }
+    };
 
-    function crearMarcoTexto(pagina, bounds, contenido, puntoTexto) {
+    AdaptadorInDesign.crearMarcoTexto = function(pagina, bounds, contenido, puntoTexto) {
         var marco = pagina.textFrames.add();
         marco.geometricBounds = bounds;
         marco.contents = contenido;
         marco.texts[0].pointSize = puntoTexto;
         return marco;
-    }
+    };
 
-    function obtenerPrimeraPagina() {
+    AdaptadorInDesign.obtenerPrimeraPagina = function() {
         return app.activeDocument.pages[0];
-    }
-
-    return {
-        hayDocumentoAbierto: hayDocumentoAbierto,
-        haySeleccion: haySeleccion,
-        obtenerSeleccion: obtenerSeleccion,
-        obtenerPaginaActiva: obtenerPaginaActiva,
-        medirElementoEnMilimetros: medirElementoEnMilimetros,
-        obtenerBounds: obtenerBounds,
-        crearGuiaHorizontal: crearGuiaHorizontal,
-        crearGuiaVertical: crearGuiaVertical,
-        crearMarcoTexto: crearMarcoTexto,
-        obtenerPrimeraPagina: obtenerPrimeraPagina
     };
 
 })();

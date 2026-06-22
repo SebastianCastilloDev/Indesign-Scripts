@@ -1,6 +1,6 @@
 // ClasificacionDeFormato depende de CalculoDeMedidas global
-global.CalculoDeMedidas = require("../maquetar/lib/calculoDeMedidas.js");
-var ClasificacionDeFormato = require("../maquetar/lib/clasificacionDeFormato.js");
+global.CalculoDeMedidas = require("../maquetar/lib/formatos/calculoDeMedidas.js");
+var ClasificacionDeFormato = require("../maquetar/lib/formatos/clasificacionDeFormato.js");
 
 var CARTA = CalculoDeMedidas.CARTA;
 var MEDIA_CARTA = CalculoDeMedidas.MEDIA_CARTA;

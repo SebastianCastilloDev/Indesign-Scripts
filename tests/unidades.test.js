@@ -8,7 +8,7 @@ global.MeasurementUnits = {
     agates:      2053331557
 };
 
-var Unidades = require("../maquetar/lib/unidades.js");
+var Unidades = require("../maquetar/lib/unidades/unidades.js");
 
 describe("Unidades", function() {
 

@@ -62,35 +62,41 @@ Si un `#include` falla (p. ej. en InDesign 2025 o anterior que no lo soporte des
 
 ## Módulos (maquetar/)
 
-### `maquetar/lib/unidades.js`
+### `maquetar/lib/unidades/unidades.js`
 Núcleo puro de conversión entre unidades y mm. Define `FACTOR_A_MM` y expone `convertirAMilimetros()`, `convertirPuntosAMilimetros()`. El `.jsx` agrega las funciones InDesign-dependent (`obtenerUnidadHorizontal`, `ejecutarConUnidadesEnPuntos`).
 
 ### `maquetar/Unidades.jsx`
-Wrapper que incluye `lib/unidades.js` y agrega la capa InDesign: lectura de `viewPreferences`, forzado temporal de unidades a puntos con `ejecutarConUnidadesEnPuntos()`.
+Wrapper que incluye `lib/unidades/unidades.js` y agrega la capa InDesign: lectura de `viewPreferences`, forzado temporal de unidades a puntos con `ejecutarConUnidadesEnPuntos()`.
 
-### `maquetar/lib/calculoDeMedidas.js`
+### `maquetar/lib/formatos/calculoDeMedidas.js`
 Catálogo de tamaños: **Carta** (215.9×279.4 mm), **Media Carta** (mitad del alto de Carta × ancho de Carta), **Cuarto Carta** (media anchura × media altura). Expone `obtenerCatalogo()` para alimentar al clasificador.
 
 ### `maquetar/CalculoDeMedidas.jsx`
-Wrapper delgado que incluye `lib/calculoDeMedidas.js`.
+Wrapper delgado que incluye `lib/formatos/calculoDeMedidas.js`.
 
-### `maquetar/lib/clasificacionDeFormato.js`
+### `maquetar/lib/formatos/clasificacionDeFormato.js`
 Lógica pura de clasificación. Recibe dimensiones en mm y tolerancias, compara contra el catálogo (directo y rotado), retorna el nombre de la categoría de menor área que cabe. Si ningún formato cabe, retorna `null`.
 
 ### `maquetar/ClasificacionDeFormato.jsx`
-Wrapper delgado que incluye `lib/clasificacionDeFormato.js`.
+Wrapper delgado que incluye `lib/formatos/clasificacionDeFormato.js`.
 
-### `maquetar/lib/validarSuperposicion.js`
+### `maquetar/lib/geometria/validarSuperposicion.js`
 Lógica pura de geometría. `validarSuperposicionObjetoConLineaGuia(obj, pagina)` verifica si un elemento cruza el centro de página donde se trazarían las guías. Retorna `"horizontal"`, `"vertical"`, `"ambas"` o `null`.
 
+### `maquetar/lib/geometria/trazadoDeGuias.js`
+Cálculo puro del centro de página. Expone `calcularCentroHorizontal(pagina)` y `calcularCentroVertical(pagina)`.
+
+### `maquetar/TrazadoDeGuias.jsx`
+Wrapper que incluye `lib/geometria/trazadoDeGuias.js` y agrega la capa InDesign: `trazarSoloHorizontal(pagina)` y `trazarAmbosEjes(pagina)` que crean las guías usando `AdaptadorInDesign`.
+
+### `maquetar/lib/adaptadores/adaptadorInDesign.js`
+Resolución de FourCharCodes de orientación con fallback progresivo. Expone `obtenerOrientacionHorizontal()` y `obtenerOrientacionVertical()`.
+
 ### `maquetar/AdaptadorInDesign.jsx`
-Capa de infraestructura. Toda interacción directa con la API de InDesign: verificar documento/selección, leer `geometricBounds`, crear guías (con fallback progresivo de `HorizontalOrVertical`), crear marcos de texto. Los FourCharCodes de orientación se resuelven una vez al cargar el módulo.
+Capa de infraestructura. Incluye `lib/adaptadores/adaptadorInDesign.js` y agrega toda la interacción con la API de InDesign: verificar documento/selección, leer `geometricBounds`, crear guías, crear marcos de texto.
 
 ### `maquetar/Depuracion.jsx`
 Registro de mensajes en un array interno `LINEAS`. Al llamar `mostrar()`, crea un text frame debajo de la primera página con hasta 20 líneas de contenido. Sin `alert()` — toda salida va aquí.
-
-### `maquetar/TrazadoDeGuias.jsx`
-Cálculo del centro de la página activa (horizontal y vertical) y creación de guías. Ofrece `trazarSoloHorizontal(pagina)` y `trazarAmbosEjes(pagina)`. Las coordenadas se calculan desde `page.bounds`.
 
 ### `maquetar/ValidacionDeEjecucion.jsx`
 Validación de precondiciones: documento abierto y selección existente. Retorna `false` si alguna falla y registra el error en `Depuracion`.
