@@ -1,8 +1,19 @@
 // ====================================================================
-// MÓDULO: Medidas
+// CONFIGURACION
 // ====================================================================
 
-var Medidas = (function() {
+var CONFIG = {
+    tolerancias: {
+        horizontal: 2,
+        vertical: 2
+    }
+};
+
+// ====================================================================
+// BOUNDED CONTEXT: Calculo de medidas
+// ====================================================================
+
+var CalculoDeMedidas = (function() {
 
     var CARTA = {
         nombre: "Carta",
@@ -29,65 +40,84 @@ var Medidas = (function() {
     var MEDIA_CARTA = calcularMediaCarta();
     var CUARTO_CARTA = calcularCuartoCarta();
 
+    function obtenerCatalogo() {
+        return [CARTA, MEDIA_CARTA, CUARTO_CARTA];
+    }
+
     return {
         CARTA: CARTA,
         MEDIA_CARTA: MEDIA_CARTA,
         CUARTO_CARTA: CUARTO_CARTA,
-        obtenerCatalogo: function() {
-            return [CARTA, MEDIA_CARTA, CUARTO_CARTA];
-        }
+        obtenerCatalogo: obtenerCatalogo
     };
 
 })();
 
 // ====================================================================
-// MÓDULO: Clasificador
+// BOUNDED CONTEXT: Clasificacion de formato
 // ====================================================================
 
-var Clasificador = (function() {
+var ClasificacionDeFormato = (function() {
 
-    function calcularArea(ancho, alto) {
-        return ancho * alto;
+    function calcularArea(tamano) {
+        return tamano.ancho * tamano.alto;
     }
 
-    function cabeEnDimension(ancho, alto, refAncho, refAlto, tolH, tolV) {
-        return (ancho <= refAncho + tolH && alto <= refAlto + tolV);
+    function cabeDirecto(dimensiones, tamano, tolerancias) {
+        return dimensiones.ancho <= tamano.ancho + tolerancias.horizontal &&
+               dimensiones.alto <= tamano.alto + tolerancias.vertical;
     }
 
-    function determinarTamanio(ancho, alto, catalogo, tolH, tolV) {
-        var mejor = null;
+    function cabeRotado(dimensiones, tamano, tolerancias) {
+        return dimensiones.ancho <= tamano.alto + tolerancias.horizontal &&
+               dimensiones.alto <= tamano.ancho + tolerancias.vertical;
+    }
+
+    function cabeEnTamano(dimensiones, tamano, tolerancias) {
+        return cabeDirecto(dimensiones, tamano, tolerancias) ||
+               cabeRotado(dimensiones, tamano, tolerancias);
+    }
+
+    function elegirCategoriaMasPequena(dimensiones, catalogo, tolerancias) {
+        var categoria = null;
         var menorArea = Infinity;
 
         for (var i = 0; i < catalogo.length; i++) {
-            var t = catalogo[i];
-            var areaRef = calcularArea(t.ancho, t.alto);
+            var tamano = catalogo[i];
+            var area = calcularArea(tamano);
 
-            var entraDirecto = cabeEnDimension(ancho, alto, t.ancho, t.alto, tolH, tolV);
-            var entraRotado = cabeEnDimension(ancho, alto, t.alto, t.ancho, tolH, tolV);
-
-            if (entraDirecto || entraRotado) {
-                if (areaRef < menorArea) {
-                    menorArea = areaRef;
-                    mejor = t.nombre;
-                }
+            if (cabeEnTamano(dimensiones, tamano, tolerancias) && area < menorArea) {
+                categoria = tamano.nombre;
+                menorArea = area;
             }
         }
-        return mejor;
+
+        return categoria;
+    }
+
+    function normalizarTolerancias(tolerancias) {
+        return {
+            horizontal: tolerancias && tolerancias.horizontal !== undefined ? tolerancias.horizontal : 2,
+            vertical: tolerancias && tolerancias.vertical !== undefined ? tolerancias.vertical : 2
+        };
+    }
+
+    function clasificar(dimensiones, tolerancias) {
+        return elegirCategoriaMasPequena(
+            dimensiones,
+            CalculoDeMedidas.obtenerCatalogo(),
+            normalizarTolerancias(tolerancias)
+        );
     }
 
     return {
-        clasificar: function(ancho, alto, tolerancias) {
-            var catalogo = Medidas.obtenerCatalogo();
-            var tolH = (tolerancias && tolerancias.horizontal !== undefined) ? tolerancias.horizontal : 2;
-            var tolV = (tolerancias && tolerancias.vertical !== undefined) ? tolerancias.vertical : 2;
-            return determinarTamanio(ancho, alto, catalogo, tolH, tolV);
-        }
+        clasificar: clasificar
     };
 
 })();
 
 // ====================================================================
-// MÓDULO: Unidades
+// BOUNDED CONTEXT: Unidades
 // ====================================================================
 
 var Unidades = (function() {
@@ -95,21 +125,17 @@ var Unidades = (function() {
     var FACTOR_A_MM = {};
     FACTOR_A_MM[MeasurementUnits.millimeters] = 1;
     FACTOR_A_MM[MeasurementUnits.centimeters] = 10;
-    FACTOR_A_MM[MeasurementUnits.inches]      = 25.4;
-    FACTOR_A_MM[MeasurementUnits.picas]       = 4.23333333333;
-    FACTOR_A_MM[MeasurementUnits.points]      = 0.35277777778;
-    FACTOR_A_MM[MeasurementUnits.agates]      = 0.18142857142;
+    FACTOR_A_MM[MeasurementUnits.inches] = 25.4;
+    FACTOR_A_MM[MeasurementUnits.picas] = 4.23333333333;
+    FACTOR_A_MM[MeasurementUnits.points] = 0.35277777778;
+    FACTOR_A_MM[MeasurementUnits.agates] = 0.18142857142;
 
-    var FACTOR_DE_MM = {};
-    FACTOR_DE_MM[MeasurementUnits.millimeters] = 1;
-    FACTOR_DE_MM[MeasurementUnits.centimeters] = 0.1;
-    FACTOR_DE_MM[MeasurementUnits.inches]      = 0.03937007874;
-    FACTOR_DE_MM[MeasurementUnits.picas]       = 0.23622047244;
-    FACTOR_DE_MM[MeasurementUnits.points]      = 2.83464566929;
-    FACTOR_DE_MM[MeasurementUnits.agates]      = 5.51181102362;
-
-    function obtenerUnidadActual() {
+    function obtenerUnidadHorizontal() {
         return app.activeDocument.viewPreferences.horizontalMeasurementUnits;
+    }
+
+    function obtenerUnidadVertical() {
+        return app.activeDocument.viewPreferences.verticalMeasurementUnits;
     }
 
     function convertirAMilimetros(valor, unidad) {
@@ -118,35 +144,42 @@ var Unidades = (function() {
         return valor * factor;
     }
 
-    function convertirDeMilimetros(valor, unidad) {
-        var factor = FACTOR_DE_MM[unidad];
-        if (factor === undefined) return valor;
-        return valor * factor;
+    function convertirPuntosAMilimetros(valor) {
+        return convertirAMilimetros(valor, MeasurementUnits.points);
     }
 
-    function convertirPuntosAMilimetros(valor) {
-        return valor * FACTOR_A_MM[MeasurementUnits.points];
+    function guardarUnidadesActuales() {
+        return {
+            horizontal: obtenerUnidadHorizontal(),
+            vertical: obtenerUnidadVertical()
+        };
+    }
+
+    function restaurarUnidades(unidades) {
+        app.activeDocument.viewPreferences.horizontalMeasurementUnits = unidades.horizontal;
+        app.activeDocument.viewPreferences.verticalMeasurementUnits = unidades.vertical;
+    }
+
+    function forzarUnidadesEnPuntos() {
+        app.activeDocument.viewPreferences.horizontalMeasurementUnits = MeasurementUnits.points;
+        app.activeDocument.viewPreferences.verticalMeasurementUnits = MeasurementUnits.points;
     }
 
     function ejecutarConUnidadesEnPuntos(accion) {
-        var doc = app.activeDocument;
-        var unidadHorizontal = doc.viewPreferences.horizontalMeasurementUnits;
-        var unidadVertical = doc.viewPreferences.verticalMeasurementUnits;
+        var unidadesOriginales = guardarUnidadesActuales();
 
         try {
-            doc.viewPreferences.horizontalMeasurementUnits = MeasurementUnits.points;
-            doc.viewPreferences.verticalMeasurementUnits = MeasurementUnits.points;
+            forzarUnidadesEnPuntos();
             return accion();
         } finally {
-            doc.viewPreferences.horizontalMeasurementUnits = unidadHorizontal;
-            doc.viewPreferences.verticalMeasurementUnits = unidadVertical;
+            restaurarUnidades(unidadesOriginales);
         }
     }
 
     return {
-        obtenerUnidadActual: obtenerUnidadActual,
+        obtenerUnidadHorizontal: obtenerUnidadHorizontal,
+        obtenerUnidadVertical: obtenerUnidadVertical,
         convertirAMilimetros: convertirAMilimetros,
-        convertirDeMilimetros: convertirDeMilimetros,
         convertirPuntosAMilimetros: convertirPuntosAMilimetros,
         ejecutarConUnidadesEnPuntos: ejecutarConUnidadesEnPuntos
     };
@@ -154,265 +187,335 @@ var Unidades = (function() {
 })();
 
 // ====================================================================
-// MÓDULO: InDesign
+// BOUNDED CONTEXT: Adaptador de InDesign
 // ====================================================================
 
-var InDesign = (function() {
+var AdaptadorInDesign = (function() {
 
-    var HORIZONTAL = 1752134266;
-    var VERTICAL = 1986224746;
+    var ORIENTACION_HORIZONTAL = obtenerOrientacionHorizontal();
+    var ORIENTACION_VERTICAL = obtenerOrientacionVertical();
+
+    function obtenerOrientacionHorizontal() {
+        if (typeof HorizontalOrVertical !== "undefined" && HorizontalOrVertical.HORIZONTAL !== undefined) return HorizontalOrVertical.HORIZONTAL;
+        if (typeof HorizontalOrVertical !== "undefined" && HorizontalOrVertical.horizontal !== undefined) return HorizontalOrVertical.horizontal;
+        return 1752332916;
+    }
+
+    function obtenerOrientacionVertical() {
+        if (typeof HorizontalOrVertical !== "undefined" && HorizontalOrVertical.VERTICAL !== undefined) return HorizontalOrVertical.VERTICAL;
+        if (typeof HorizontalOrVertical !== "undefined" && HorizontalOrVertical.vertical !== undefined) return HorizontalOrVertical.vertical;
+        return 1986359924;
+    }
 
     function hayDocumentoAbierto() {
         return app.documents.length > 0;
     }
 
-    function hayElementosSeleccionados() {
+    function haySeleccion() {
         return app.selection.length > 0;
     }
 
-    function obtenerSeleccionActual() {
+    function obtenerSeleccion() {
         return app.selection;
-    }
-
-    function medirElemento(obj) {
-        var unidad = Unidades.obtenerUnidadActual();
-        var bounds = obj.geometricBounds;
-        return {
-            ancho: Unidades.convertirAMilimetros(Math.abs(bounds[3] - bounds[1]), unidad),
-            alto: Unidades.convertirAMilimetros(Math.abs(bounds[2] - bounds[0]), unidad)
-        };
     }
 
     function obtenerPaginaActiva() {
         return app.activeWindow.activePage;
     }
 
-    function crearGuiaHorizontal(pagina, posicionY) {
+    function obtenerBounds(obj) {
+        return obj.geometricBounds;
+    }
+
+    function medirElementoEnMilimetros(obj) {
+        var bounds = obtenerBounds(obj);
+        var unidadHorizontal = Unidades.obtenerUnidadHorizontal();
+        var unidadVertical = Unidades.obtenerUnidadVertical();
+
+        return {
+            ancho: Unidades.convertirAMilimetros(Math.abs(bounds[3] - bounds[1]), unidadHorizontal),
+            alto: Unidades.convertirAMilimetros(Math.abs(bounds[2] - bounds[0]), unidadVertical)
+        };
+    }
+
+    function crearGuia(pagina, orientacion, posicion) {
         var guia = pagina.guides.add();
-        guia.orientation = HORIZONTAL;
-        guia.location = posicionY;
+        guia.orientation = orientacion;
+        guia.location = posicion;
         return guia;
     }
 
+    function crearGuiaHorizontal(pagina, posicionY) {
+        return crearGuia(pagina, ORIENTACION_HORIZONTAL, posicionY);
+    }
+
     function crearGuiaVertical(pagina, posicionX) {
-        var guia = pagina.guides.add();
-        guia.orientation = VERTICAL;
-        guia.location = posicionX;
-        return guia;
+        return crearGuia(pagina, ORIENTACION_VERTICAL, posicionX);
+    }
+
+    function crearMarcoTexto(pagina, bounds, contenido, puntoTexto) {
+        var marco = pagina.textFrames.add();
+        marco.geometricBounds = bounds;
+        marco.contents = contenido;
+        marco.texts[0].pointSize = puntoTexto;
+        return marco;
+    }
+
+    function obtenerPrimeraPagina() {
+        return app.activeDocument.pages[0];
     }
 
     return {
         hayDocumentoAbierto: hayDocumentoAbierto,
-        hayElementosSeleccionados: hayElementosSeleccionados,
-        obtenerSeleccionActual: obtenerSeleccionActual,
-        medirElemento: medirElemento,
+        haySeleccion: haySeleccion,
+        obtenerSeleccion: obtenerSeleccion,
         obtenerPaginaActiva: obtenerPaginaActiva,
+        medirElementoEnMilimetros: medirElementoEnMilimetros,
         crearGuiaHorizontal: crearGuiaHorizontal,
-        crearGuiaVertical: crearGuiaVertical
+        crearGuiaVertical: crearGuiaVertical,
+        crearMarcoTexto: crearMarcoTexto,
+        obtenerPrimeraPagina: obtenerPrimeraPagina
     };
 
 })();
 
 // ====================================================================
-// MÓDULO: Guiador
+// BOUNDED CONTEXT: Depuracion
 // ====================================================================
 
-var Guiador = (function() {
+var Depuracion = (function() {
 
-    function obtenerCentroPagina(pagina) {
-        var bounds = pagina.bounds;
-        var ancho = Math.abs(bounds[3] - bounds[1]);
-        var alto = Math.abs(bounds[2] - bounds[0]);
+    var mensajes = [];
+    var activo = true;
 
-        return {
-            x: ancho / 2,
-            y: alto / 2,
-            absolutoX: bounds[1] + (ancho / 2),
-            absolutoY: bounds[0] + (alto / 2),
-            top: bounds[0],
-            left: bounds[1]
-        };
+    function limpiar() {
+        mensajes = [];
     }
-
-    function registrarCentro(centro) {
-        Depurador.registrar(
-            "   Centro relativo página: X=" + Unidades.convertirPuntosAMilimetros(centro.x).toFixed(2) +
-            "mm, Y=" + Unidades.convertirPuntosAMilimetros(centro.y).toFixed(2) + "mm"
-        );
-        Depurador.registrar(
-            "   Centro absoluto regla: X=" + Unidades.convertirPuntosAMilimetros(centro.absolutoX).toFixed(2) +
-            "mm, Y=" + Unidades.convertirPuntosAMilimetros(centro.absolutoY).toFixed(2) + "mm"
-        );
-    }
-
-    function trazarGuiaHorizontalAlCentro(pagina) {
-        Unidades.ejecutarConUnidadesEnPuntos(function() {
-            try {
-                var centro = obtenerCentroPagina(pagina);
-                registrarCentro(centro);
-                InDesign.crearGuiaHorizontal(pagina, centro.y);
-                Depurador.registrar("   Guía horizontal creada al centro.");
-            } catch (e) {
-                Depurador.registrar("   ERROR guía horizontal: " + e.toString());
-            }
-        });
-    }
-
-    function trazarGuiaVerticalAlCentro(pagina) {
-        Unidades.ejecutarConUnidadesEnPuntos(function() {
-            try {
-                var centro = obtenerCentroPagina(pagina);
-                registrarCentro(centro);
-                InDesign.crearGuiaVertical(pagina, centro.x);
-                Depurador.registrar("   Guía vertical creada al centro.");
-            } catch (e) {
-                Depurador.registrar("   ERROR guía vertical: " + e.toString());
-            }
-        });
-    }
-
-    function trazarGuiasAlCentro(pagina) {
-        trazarGuiaHorizontalAlCentro(pagina);
-        trazarGuiaVerticalAlCentro(pagina);
-    }
-
-    return {
-        trazarGuiaHorizontalAlCentro: trazarGuiaHorizontalAlCentro,
-        trazarGuiasAlCentro: trazarGuiasAlCentro
-    };
-
-})();
-
-// ====================================================================
-// MÓDULO: Depurador
-// ====================================================================
-
-var Depurador = (function() {
-
-    var textos = [];
-    var ACTIVO = true;
 
     function registrar(mensaje) {
-        if (!ACTIVO) return;
-        textos.push(mensaje);
+        if (!activo) return;
+        mensajes.push(mensaje);
+    }
+
+    function hayMensajes() {
+        return mensajes.length > 0;
+    }
+
+    function calcularBoundsMarcoDebug(pagina) {
+        var boundsPagina = pagina.bounds;
+        var altoMarco = Math.max(60, mensajes.length * 10);
+
+        return [
+            boundsPagina[2] + 30,
+            boundsPagina[1],
+            boundsPagina[2] + 30 + altoMarco,
+            boundsPagina[3]
+        ];
+    }
+
+    function crearMarcoDebug() {
+        Unidades.ejecutarConUnidadesEnPuntos(function() {
+            var pagina = AdaptadorInDesign.obtenerPrimeraPagina();
+            var bounds = calcularBoundsMarcoDebug(pagina);
+            AdaptadorInDesign.crearMarcoTexto(pagina, bounds, mensajes.join("\n"), 7);
+        });
     }
 
     function mostrar() {
-        if (!ACTIVO || textos.length === 0) return;
+        if (!activo || !hayMensajes()) return;
         try {
-            Unidades.ejecutarConUnidadesEnPuntos(function() {
-                var doc = app.activeDocument;
-                var pagina = doc.pages[0];
-                var boundsPagina = pagina.bounds;
-                var altoMarco = Math.max(60, textos.length * 10);
-
-                var marco = pagina.textFrames.add();
-                marco.geometricBounds = [
-                    boundsPagina[2] + 30,
-                    boundsPagina[1],
-                    boundsPagina[2] + 30 + altoMarco,
-                    boundsPagina[3]
-                ];
-                marco.contents = textos.join("\n");
-                marco.texts[0].pointSize = 7;
-            });
+            crearMarcoDebug();
         } catch (e) {}
     }
 
-    function limpiar() {
-        textos = [];
-    }
-
     function desactivar() {
-        ACTIVO = false;
+        activo = false;
     }
 
     return {
+        limpiar: limpiar,
         registrar: registrar,
         mostrar: mostrar,
-        limpiar: limpiar,
         desactivar: desactivar
     };
 
 })();
 
 // ====================================================================
-// MÓDULO: Validador
+// BOUNDED CONTEXT: Trazado de guias
 // ====================================================================
 
-var Validador = (function() {
+var TrazadoDeGuias = (function() {
 
-    function validarDocumento() {
-        return InDesign.hayDocumentoAbierto();
+    function calcularCentroRelativoPagina(pagina) {
+        var bounds = pagina.bounds;
+        var ancho = Math.abs(bounds[3] - bounds[1]);
+        var alto = Math.abs(bounds[2] - bounds[0]);
+
+        return {
+            x: ancho / 2,
+            y: alto / 2
+        };
     }
 
-    function validarSeleccion() {
-        return InDesign.hayElementosSeleccionados();
+    function registrarCentro(centro) {
+        Depuracion.registrar(
+            "   Centro página: X=" + Unidades.convertirPuntosAMilimetros(centro.x).toFixed(2) +
+            "mm, Y=" + Unidades.convertirPuntosAMilimetros(centro.y).toFixed(2) + "mm"
+        );
+    }
+
+    function ejecutarTrazado(nombreAccion, accion) {
+        Unidades.ejecutarConUnidadesEnPuntos(function() {
+            try {
+                accion();
+                Depuracion.registrar("   " + nombreAccion + " completado.");
+            } catch (e) {
+                Depuracion.registrar("   ERROR en " + nombreAccion + ": " + e.toString());
+            }
+        });
+    }
+
+    function crearGuiaHorizontalAlCentro(pagina) {
+        ejecutarTrazado("Guía horizontal", function() {
+            var centro = calcularCentroRelativoPagina(pagina);
+            registrarCentro(centro);
+            AdaptadorInDesign.crearGuiaHorizontal(pagina, centro.y);
+        });
+    }
+
+    function crearGuiaVerticalAlCentro(pagina) {
+        ejecutarTrazado("Guía vertical", function() {
+            var centro = calcularCentroRelativoPagina(pagina);
+            registrarCentro(centro);
+            AdaptadorInDesign.crearGuiaVertical(pagina, centro.x);
+        });
+    }
+
+    function crearGuiasCentrales(pagina) {
+        crearGuiaHorizontalAlCentro(pagina);
+        crearGuiaVerticalAlCentro(pagina);
     }
 
     return {
-        validarDocumento: validarDocumento,
-        validarSeleccion: validarSeleccion
+        crearGuiaHorizontalAlCentro: crearGuiaHorizontalAlCentro,
+        crearGuiasCentrales: crearGuiasCentrales
     };
 
 })();
 
 // ====================================================================
-// MÓDULO: Procesador
+// BOUNDED CONTEXT: Validacion de ejecucion
 // ====================================================================
 
-var Procesador = (function() {
+var ValidacionDeEjecucion = (function() {
 
-    var Opciones = {
+    function validarDocumento() {
+        if (AdaptadorInDesign.hayDocumentoAbierto()) return true;
+        Depuracion.registrar("ERROR: No hay documento abierto.");
+        return false;
+    }
+
+    function validarSeleccion() {
+        if (AdaptadorInDesign.haySeleccion()) return true;
+        Depuracion.registrar("ERROR: No hay elementos seleccionados.");
+        return false;
+    }
+
+    function validarEntorno() {
+        return validarDocumento() && validarSeleccion();
+    }
+
+    return {
+        validarEntorno: validarEntorno
+    };
+
+})();
+
+// ====================================================================
+// BOUNDED CONTEXT: Maquetacion por categoria
+// ====================================================================
+
+var MaquetacionPorCategoria = (function() {
+
+    var opciones = {
         tolerancias: { horizontal: 2, vertical: 2 }
     };
 
     function configurar(config) {
-        if (config.tolerancias) {
-            Opciones.tolerancias = config.tolerancias;
+        if (config && config.tolerancias) {
+            opciones.tolerancias = config.tolerancias;
         }
     }
 
-    function analizarElemento(obj) {
-        var dim = InDesign.medirElemento(obj);
-        var categoria = Clasificador.clasificar(dim.ancho, dim.alto, Opciones.tolerancias);
-        Depurador.registrar("Elemento: " + dim.ancho.toFixed(2) + " x " + dim.alto.toFixed(2) + " mm -> " + categoria);
+    function analizarElemento(elemento) {
+        var dimensiones = AdaptadorInDesign.medirElementoEnMilimetros(elemento);
+        var categoria = ClasificacionDeFormato.clasificar(dimensiones, opciones.tolerancias);
+
+        Depuracion.registrar(
+            "Elemento: " + dimensiones.ancho.toFixed(2) +
+            " x " + dimensiones.alto.toFixed(2) + " mm -> " + categoria
+        );
+
         return {
             categoria: categoria,
-            ancho: dim.ancho,
-            alto: dim.alto
+            ancho: dimensiones.ancho,
+            alto: dimensiones.alto
         };
     }
 
-    function aplicarAccionesSegunCategoria(resultado) {
-        var pagina = InDesign.obtenerPaginaActiva();
+    function obtenerPaginaParaMaquetar() {
+        var pagina = AdaptadorInDesign.obtenerPaginaActiva();
         if (!pagina) {
-            Depurador.registrar("-> ERROR: No se pudo obtener la página activa.");
-            return;
+            Depuracion.registrar("-> ERROR: No se pudo obtener la página activa.");
         }
+        return pagina;
+    }
+
+    function aplicarMaquetacionCuartoCarta(pagina) {
+        Depuracion.registrar("-> Cuarto Carta: creando guías horizontal y vertical al centro...");
+        TrazadoDeGuias.crearGuiasCentrales(pagina);
+    }
+
+    function aplicarMaquetacionMediaCarta(pagina) {
+        Depuracion.registrar("-> Media Carta: creando guía horizontal al centro...");
+        TrazadoDeGuias.crearGuiaHorizontalAlCentro(pagina);
+    }
+
+    function aplicarMaquetacionSegunCategoria(resultado) {
+        if (resultado.categoria !== "Cuarto Carta" && resultado.categoria !== "Media Carta") return;
+
+        var pagina = obtenerPaginaParaMaquetar();
+        if (!pagina) return;
 
         if (resultado.categoria === "Cuarto Carta") {
-            Depurador.registrar("-> Cuarto Carta: creando guías horizontal y vertical al centro...");
-            Guiador.trazarGuiasAlCentro(pagina);
+            aplicarMaquetacionCuartoCarta(pagina);
         } else if (resultado.categoria === "Media Carta") {
-            Depurador.registrar("-> Media Carta: creando guía horizontal al centro...");
-            Guiador.trazarGuiaHorizontalAlCentro(pagina);
+            aplicarMaquetacionMediaCarta(pagina);
         }
     }
 
+    function armarResultado(indice, analisis) {
+        return {
+            indice: indice,
+            categoria: analisis.categoria || "Sin categoría",
+            ancho: analisis.ancho,
+            alto: analisis.alto
+        };
+    }
+
+    function procesarElemento(elemento, indice) {
+        var analisis = analizarElemento(elemento);
+        aplicarMaquetacionSegunCategoria(analisis);
+        return armarResultado(indice, analisis);
+    }
+
     function procesarSeleccion() {
-        var seleccion = InDesign.obtenerSeleccionActual();
+        var seleccion = AdaptadorInDesign.obtenerSeleccion();
         var resultados = [];
 
         for (var i = 0; i < seleccion.length; i++) {
-            var resultado = analizarElemento(seleccion[i]);
-            aplicarAccionesSegunCategoria(resultado);
-            resultados.push({
-                indice: i + 1,
-                categoria: resultado.categoria || "Sin categoría",
-                ancho: resultado.ancho,
-                alto: resultado.alto
-            });
+            resultados.push(procesarElemento(seleccion[i], i + 1));
         }
 
         return resultados;
@@ -426,65 +529,80 @@ var Procesador = (function() {
 })();
 
 // ====================================================================
-// MÓDULO: Presentador
+// BOUNDED CONTEXT: Presentacion de resultados
 // ====================================================================
 
-var Presentador = (function() {
+var PresentacionDeResultados = (function() {
 
-    function volcarResultados(resultados) {
-        Depurador.registrar("=== RESULTADOS ===");
+    function registrarEncabezado() {
+        Depuracion.registrar("=== RESULTADOS ===");
+    }
+
+    function registrarResultado(resultado) {
+        Depuracion.registrar(
+            "Elemento " + resultado.indice + ": " + resultado.categoria +
+            " (" + resultado.ancho.toFixed(2) + " x " + resultado.alto.toFixed(2) + ")"
+        );
+    }
+
+    function mostrarResultados(resultados) {
+        registrarEncabezado();
         for (var i = 0; i < resultados.length; i++) {
-            var r = resultados[i];
-            Depurador.registrar("Elemento " + r.indice + ": " + r.categoria + " (" + r.ancho.toFixed(2) + " x " + r.alto.toFixed(2) + ")");
+            registrarResultado(resultados[i]);
         }
     }
 
     return {
-        volcarResultados: volcarResultados
+        mostrarResultados: mostrarResultados
     };
 
 })();
 
 // ====================================================================
-// CONFIGURACIÓN
+// APLICACION
 // ====================================================================
 
-var CONFIG = {
-    tolerancias: {
-        horizontal: 2,
-        vertical: 2
-    }
-};
+var Aplicacion = (function() {
 
-// ====================================================================
-// ORQUESTADOR
-// ====================================================================
-
-function ejecutar(config) {
-    Depurador.limpiar();
-    Depurador.registrar("=== INICIO DEPURACIÓN ===");
-
-    if (!Validador.validarDocumento()) {
-        Depurador.registrar("ERROR: No hay documento abierto.");
-        Depurador.mostrar();
-        return;
+    function iniciarDepuracion() {
+        Depuracion.limpiar();
+        Depuracion.registrar("=== INICIO DEPURACIÓN ===");
     }
 
-    if (!Validador.validarSeleccion()) {
-        Depurador.registrar("ERROR: No hay elementos seleccionados.");
-        Depurador.mostrar();
-        return;
+    function configurarProcesos(config) {
+        MaquetacionPorCategoria.configurar(config);
     }
 
-    Procesador.configurar(config);
-    var resultados = Procesador.procesarSeleccion();
+    function ejecutarFlujoPrincipal() {
+        var resultados = MaquetacionPorCategoria.procesarSeleccion();
+        PresentacionDeResultados.mostrarResultados(resultados);
+    }
 
-    Presentador.volcarResultados(resultados);
-    Depurador.mostrar();
-}
+    function finalizarDepuracion() {
+        Depuracion.mostrar();
+    }
+
+    function ejecutar(config) {
+        iniciarDepuracion();
+
+        if (!ValidacionDeEjecucion.validarEntorno()) {
+            finalizarDepuracion();
+            return;
+        }
+
+        configurarProcesos(config);
+        ejecutarFlujoPrincipal();
+        finalizarDepuracion();
+    }
+
+    return {
+        ejecutar: ejecutar
+    };
+
+})();
 
 // ====================================================================
 // ENTRY POINT
 // ====================================================================
 
-ejecutar(CONFIG);
+Aplicacion.ejecutar(CONFIG);
