@@ -21,14 +21,12 @@ var MaquetacionPorCategoria = (function() {
         Depuracion.registrar("  Clasificado como: " + categoria);
 
         if (categoria === CalculoDeMedidas.MEDIA_CARTA.nombre) {
-            var superposicion = ValidarSuperposicion.validarSuperposicionObjetoConLineaGuia(obj, pagina);
-            if (superposicion === "horizontal" || superposicion === "ambas") {
-                alert("El elemento seleccionado está encima de la guía horizontal del centro de página.");
-                return;
-            }
-            TrazadoDeGuias.trazarSoloHorizontal(pagina);
+            MaquetarMediaCarta.procesarElemento(obj, pagina);
         } else if (categoria === CalculoDeMedidas.CUARTO_CARTA.nombre) {
-            MaquetarDocumentoParaImpresion.procesarElemento(obj, pagina);
+            MaquetarDocumentoParaImpresion.procesarElemento({
+                obj: obj,
+                agrupadoTemporal: false
+            }, pagina);
         }
     }
 

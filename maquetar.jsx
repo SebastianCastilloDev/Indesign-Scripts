@@ -26,6 +26,7 @@ var CONFIG = {
 #include "maquetar/TrazadoDeGuias.jsx"
 #include "maquetar/ValidacionDeEjecucion.jsx"
 #include "maquetar/RepeticionDeCuadrantes.jsx"
+#include "maquetar/MaquetarMediaCarta.jsx"
 #include "maquetar/maquetarDocumentoParaImpresion.jsx"
 #include "maquetar/MaquetacionPorCategoria.jsx"
 #include "maquetar/PresentacionDeResultados.jsx"
