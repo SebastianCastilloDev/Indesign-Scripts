@@ -16,6 +16,7 @@ var CONFIG = {
 #include "maquetar/Unidades.jsx"
 #include "maquetar/CalculoDeMedidas.jsx"
 #include "maquetar/ClasificacionDeFormato.jsx"
+#include "maquetar/lib/validarSuperposicion.js"
 #include "maquetar/AdaptadorInDesign.jsx"
 #include "maquetar/Depuracion.jsx"
 #include "maquetar/TrazadoDeGuias.jsx"

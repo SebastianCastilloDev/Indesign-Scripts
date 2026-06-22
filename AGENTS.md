@@ -18,44 +18,70 @@ var Contexto = (function() {
 })();
 ```
 
-El archivo raíz (entry point) es delgado: solo contiene la configuración (`CONFIG`), los `#include` de los módulos en orden de dependencia, y la llamada al orquestador.
+### Dual export pattern (lib/ + .jsx)
+
+La lógica pura (sin API de InDesign) vive en `maquetar/lib/*.js` con doble export:
+
+```javascript
+var MiModulo = (function() { /* ... */ })();
+if (typeof module !== "undefined" && module.exports) {
+    module.exports = MiModulo;
+}
+```
+
+Esto permite:
+- `#include` desde los `.jsx` (ExtendScript lo interpreta como texto plano y define la variable global)
+- `require()` desde Node.js para tests con Jest
+
+Los archivos `.jsx` son wrappers delgados que incluyen el `lib/` correspondiente:
 
 ```
-// maquetar.jsx
-var CONFIG = { ... };
-#include "maquetar/Unidades.jsx"
-#include "maquetar/CalculoDeMedidas.jsx"
-...
-Aplicacion.ejecutar(CONFIG);
+// maquetar/CalculoDeMedidas.jsx
+#include "lib/calculoDeMedidas.js"
 ```
+
+Cuando un módulo tiene lógica pura + funciones que dependen de la API de InDesign (ej. `Unidades`), el `.jsx` hace `#include` del `lib/` y luego agrega las funciones InDesign-dependent.
 
 ### Orden de inclusión
 
-Los `#include` deben respetar el grafo de dependencias. El orden actual para `maquetar/`:
+Los `#include` deben respetar el grafo de dependencias. Orden actual en `maquetar.jsx`:
 
-1. `Unidades.jsx` — sin dependencias
-2. `CalculoDeMedidas.jsx` — sin dependencias
-3. `ClasificacionDeFormato.jsx` → CalculoDeMedidas
-4. `AdaptadorInDesign.jsx` → Unidades
-5. `Depuracion.jsx` → Unidades, AdaptadorInDesign
-6. `TrazadoDeGuias.jsx` → Unidades, AdaptadorInDesign, Depuracion
-7. `ValidacionDeEjecucion.jsx` → AdaptadorInDesign, Depuracion
-8. `MaquetacionPorCategoria.jsx` → AdaptadorInDesign, ClasificacionDeFormato, Depuracion, TrazadoDeGuias
-9. `PresentacionDeResultados.jsx` → Depuracion
-10. `Aplicacion.jsx` → todos los anteriores
+1. `maquetar/Unidades.jsx` → incluye `lib/unidades.js` — sin dependencias
+2. `maquetar/CalculoDeMedidas.jsx` → incluye `lib/calculoDeMedidas.js` — sin dependencias
+3. `maquetar/ClasificacionDeFormato.jsx` → incluye `lib/clasificacionDeFormato.js` → CalculoDeMedidas
+4. `maquetar/lib/validarSuperposicion.js` — sin dependencias
+5. `maquetar/AdaptadorInDesign.jsx` → Unidades
+6. `maquetar/Depuracion.jsx` → Unidades, AdaptadorInDesign
+7. `maquetar/TrazadoDeGuias.jsx` → Unidades, AdaptadorInDesign, Depuracion
+8. `maquetar/ValidacionDeEjecucion.jsx` → AdaptadorInDesign, Depuracion
+9. `maquetar/MaquetacionPorCategoria.jsx` → AdaptadorInDesign, ClasificacionDeFormato, Depuracion, TrazadoDeGuias, ValidarSuperposicion
+10. `maquetar/PresentacionDeResultados.jsx` → Depuracion
+11. `maquetar/Aplicacion.jsx` → todos los anteriores
 
 Si un `#include` falla (p. ej. en InDesign 2025 o anterior que no lo soporte desde el panel Scripts), concatenar manualmente el contenido de los módulos directamente en el entry point.
 
 ## Módulos (maquetar/)
 
-### `maquetar/Unidades.jsx`
-Conversión entre unidades de InDesign y mm. Ofrece `ejecutarConUnidadesEnPuntos()` que fuerza las reglas del documento a puntos temporalmente, ejecuta una función y restaura las unidades originales. Las constantes de conversión se almacenan en `FACTOR_A_MM`.
+### `maquetar/lib/unidades.js`
+Núcleo puro de conversión entre unidades y mm. Define `FACTOR_A_MM` y expone `convertirAMilimetros()`, `convertirPuntosAMilimetros()`. El `.jsx` agrega las funciones InDesign-dependent (`obtenerUnidadHorizontal`, `ejecutarConUnidadesEnPuntos`).
 
-### `maquetar/CalculoDeMedidas.jsx`
+### `maquetar/Unidades.jsx`
+Wrapper que incluye `lib/unidades.js` y agrega la capa InDesign: lectura de `viewPreferences`, forzado temporal de unidades a puntos con `ejecutarConUnidadesEnPuntos()`.
+
+### `maquetar/lib/calculoDeMedidas.js`
 Catálogo de tamaños: **Carta** (215.9×279.4 mm), **Media Carta** (mitad del alto de Carta × ancho de Carta), **Cuarto Carta** (media anchura × media altura). Expone `obtenerCatalogo()` para alimentar al clasificador.
 
-### `maquetar/ClasificacionDeFormato.jsx`
+### `maquetar/CalculoDeMedidas.jsx`
+Wrapper delgado que incluye `lib/calculoDeMedidas.js`.
+
+### `maquetar/lib/clasificacionDeFormato.js`
 Lógica pura de clasificación. Recibe dimensiones en mm y tolerancias, compara contra el catálogo (directo y rotado), retorna el nombre de la categoría de menor área que cabe. Si ningún formato cabe, retorna `null`.
+
+### `maquetar/ClasificacionDeFormato.jsx`
+Wrapper delgado que incluye `lib/clasificacionDeFormato.js`.
+
+### `maquetar/lib/validarSuperposicion.js`
+Lógica pura de geometría. `validarSuperposicionObjetoConLineaGuia(obj, pagina)` verifica si un elemento cruza el centro de página donde se trazarían las guías. Retorna `"horizontal"`, `"vertical"`, `"ambas"` o `null`.
 
 ### `maquetar/AdaptadorInDesign.jsx`
 Capa de infraestructura. Toda interacción directa con la API de InDesign: verificar documento/selección, leer `geometricBounds`, crear guías (con fallback progresivo de `HorizontalOrVertical`), crear marcos de texto. Los FourCharCodes de orientación se resuelven una vez al cargar el módulo.
@@ -70,7 +96,7 @@ Cálculo del centro de la página activa (horizontal y vertical) y creación de 
 Validación de precondiciones: documento abierto y selección existente. Retorna `false` si alguna falla y registra el error en `Depuracion`.
 
 ### `maquetar/MaquetacionPorCategoria.jsx`
-Orquestación del análisis de cada elemento seleccionado: mide dimensiones, clasifica y aplica la acción según categoría (guía horizontal para Media Carta, ambos ejes para Cuarto Carta). Cada elemento se procesa con try-catch individual.
+Orquestación del análisis de cada elemento seleccionado: mide dimensiones, clasifica y aplica la acción según categoría (guía horizontal para Media Carta, ambos ejes para Cuarto Carta). Antes de trazar guías, valida con `ValidarSuperposicion` que el elemento no esté sobre la posición donde se trazaría la guía; si lo está, muestra `alert()` y omite el trazado. Cada elemento se procesa con try-catch individual.
 
 ### `maquetar/PresentacionDeResultados.jsx`
 Volcado final de resultados. Simplemente agrega "--- Fin del proceso ---" y llama a `Depuracion.mostrar()`.
@@ -123,9 +149,22 @@ finalizarDepuracion
   └── crear text frame debajo de la página
 ```
 
+## Testing
+
+Los módulos de lógica pura en `maquetar/lib/*.js` se testean con Jest.
+
+```bash
+npm test          # ejecuta todos los tests
+npm run test:watch # modo watch
+```
+
+Los tests están en `tests/*.test.js`. Para mockear las constantes de InDesign que no existen en Node (`MeasurementUnits`), se definen en el test antes del `require()`.
+
+**No se testean** los módulos que dependen de la API de InDesign (`AdaptadorInDesign`, `Depuracion`, `TrazadoDeGuias`, etc.) — solo se prueban manualmente desde InDesign.
+
 ## Reglas generales
 
-- **Sin alert()**. Toda salida va al módulo `Depuracion`, que crea un text frame.
+- **Sin alert()** (salvo la excepción documentada en `MaquetacionPorCategoria` donde el usuario lo solicitó explícitamente). Toda salida va al módulo `Depuracion`, que crea un text frame.
 - **try-catch** alrededor de operaciones con la API de InDesign que puedan fallar. Registrar en `Depuracion` en lugar de mostrar alertas.
 - **Configurable desde arriba**: `CONFIG` en la cabecera, inyectado a `Aplicacion.ejecutar(CONFIG)`. Los módulos internos no hardcodean valores.
-- **Sin dependencias externas**. Sin `$.evalFile`. Cada script es autocontenido: los módulos se cargan con `#include` desde el entry point (o se concatenan si `#include` no está disponible).
+- **Sin dependencias externas** en ExtendScript. Sin `$.evalFile`. Cada script es autocontenido: los módulos se cargan con `#include` desde el entry point (o se concatenan si `#include` no está disponible). Las dependencias npm (`jest`) son solo para desarrollo/testing.
