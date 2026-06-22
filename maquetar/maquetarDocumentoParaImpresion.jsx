@@ -13,6 +13,42 @@ var MaquetarDocumentoParaImpresion = (function() {
                bounds[3] <= centroX;
     }
 
+    function obtenerNombreObjeto(obj) {
+        try {
+            return obj.constructor && obj.constructor.name ? obj.constructor.name : "desconocido";
+        } catch (e) {
+            return "desconocido";
+        }
+    }
+
+    function registrarBounds(etiqueta, obj) {
+        try {
+            var bounds = obj.geometricBounds;
+            Depuracion.registrar("    " + etiqueta + " tipo: " + obtenerNombreObjeto(obj));
+            Depuracion.registrar("    " + etiqueta + " bounds: [" + bounds.join(", ") + "]");
+            Depuracion.registrar("    " + etiqueta + " centro: [" + ((bounds[1] + bounds[3]) / 2) + ", " + ((bounds[0] + bounds[2]) / 2) + "]");
+            Depuracion.registrar("    " + etiqueta + " ancho/alto: " + Math.abs(bounds[3] - bounds[1]) + " x " + Math.abs(bounds[2] - bounds[0]));
+        } catch (e) {
+            Depuracion.registrar("    " + etiqueta + " bounds no disponibles: " + e.toString());
+        }
+    }
+
+    function registrarElementosInternos(etiqueta, obj) {
+        try {
+            var elementos = obj.allPageItems || obj.pageItems;
+            if (!elementos) return;
+
+            Depuracion.registrar("    " + etiqueta + " elementos internos: " + elementos.length);
+            for (var i = 0; i < elementos.length && i < 30; i++) {
+                var item = elementos[i];
+                var bounds = item.geometricBounds;
+                Depuracion.registrar("      [" + i + "] " + obtenerNombreObjeto(item) + " bounds: [" + bounds.join(", ") + "] rotation: " + item.rotationAngle);
+            }
+        } catch (e) {
+            Depuracion.registrar("    " + etiqueta + " elementos internos no disponibles: " + e.toString());
+        }
+    }
+
     function duplicarHorizontal(obj, pagina) {
         var pBounds = pagina.bounds;
         var centroX = (pBounds[1] + pBounds[3]) / 2;
@@ -36,6 +72,18 @@ var MaquetarDocumentoParaImpresion = (function() {
         Depuracion.registrar("    nuevo centroElementoX: " + ((dupBounds[1] + dupBounds[3]) / 2));
 
         return dup;
+    }
+
+    function rotarMediaVuelta(obj) {
+        var anguloActual = typeof obj.rotationAngle === "number" ? obj.rotationAngle : 0;
+        Depuracion.registrar("  DEBUG rotarMediaVuelta:");
+        Depuracion.registrar("    angulo antes: " + anguloActual);
+        registrarBounds("antes de rotar", obj);
+        obj.rotationAngle = anguloActual + 180;
+        Depuracion.registrar("    angulo despues: " + obj.rotationAngle);
+        registrarBounds("despues de rotar", obj);
+        registrarElementosInternos("despues de rotar", obj);
+        return obj;
     }
 
     function duplicarVertical(obj, pagina) {
@@ -64,9 +112,34 @@ var MaquetarDocumentoParaImpresion = (function() {
     }
 
     function duplicarEnCuadrantes(obj, pagina) {
+        Depuracion.registrar("  DEBUG objeto base antes de duplicar:");
+        registrarBounds("base", obj);
+        registrarElementosInternos("base", obj);
+
         var dupHorizontal = duplicarHorizontal(obj, pagina);
-        duplicarVertical(obj, pagina);
-        duplicarVertical(dupHorizontal, pagina);
+        var dupVertical = duplicarVertical(obj, pagina);
+        var dupDiagonal = duplicarVertical(dupHorizontal, pagina);
+
+        rotarMediaVuelta(dupHorizontal);
+        rotarMediaVuelta(dupVertical);
+        rotarMediaVuelta(dupDiagonal);
+    }
+
+    function convertirSeleccionEnArray(seleccion) {
+        var elementos = [];
+        for (var i = 0; i < seleccion.length; i++) {
+            elementos.push(seleccion[i]);
+        }
+        return elementos;
+    }
+
+    function prepararObjetoBase(seleccion, pagina) {
+        if (seleccion.length === 1) {
+            return seleccion[0];
+        }
+
+        Depuracion.registrar("Agrupando " + seleccion.length + " elementos para maquetar como una sola pieza.");
+        return AdaptadorInDesign.agruparElementos(convertirSeleccionEnArray(seleccion));
     }
 
     function procesarElemento(obj, pagina) {
@@ -84,7 +157,7 @@ var MaquetarDocumentoParaImpresion = (function() {
         }
 
         duplicarEnCuadrantes(obj, pagina);
-        Depuracion.registrar("Elemento duplicado a los cuadrantes restantes sin invertir contenido.");
+        Depuracion.registrar("Elemento duplicado a los cuadrantes restantes con rotación de 180 grados.");
         return true;
     }
 
@@ -95,21 +168,17 @@ var MaquetarDocumentoParaImpresion = (function() {
 
         var seleccion = AdaptadorInDesign.obtenerSeleccion();
         var pagina = AdaptadorInDesign.obtenerPaginaActiva();
+        var obj = prepararObjetoBase(seleccion, pagina);
 
-        Depuracion.registrar("MaquetarDocumentoParaImpresion: procesando " + seleccion.length + " elemento(s)...");
+        Depuracion.registrar("MaquetarDocumentoParaImpresion: procesando selección como una sola pieza...");
 
-        var exito = false;
-        for (var i = 0; i < seleccion.length; i++) {
-            try {
-                if (procesarElemento(seleccion[i], pagina)) {
-                    exito = true;
-                }
-            } catch (e) {
-                Depuracion.registrar("  Error al procesar elemento " + (i + 1) + ": " + e.toString());
-            }
+        try {
+            return procesarElemento(obj, pagina);
+        } catch (e) {
+            Depuracion.registrar("  Error al procesar selección: " + e.toString());
         }
 
-        return exito;
+        return false;
     }
 
     function ejecutar(config) {
@@ -131,7 +200,8 @@ var MaquetarDocumentoParaImpresion = (function() {
         estaEnCuadranteSuperiorIzquierdo: estaEnCuadranteSuperiorIzquierdo,
         duplicarHorizontal: duplicarHorizontal,
         duplicarVertical: duplicarVertical,
-        duplicarEnCuadrantes: duplicarEnCuadrantes
+        duplicarEnCuadrantes: duplicarEnCuadrantes,
+        prepararObjetoBase: prepararObjetoBase
     };
 
 })();

@@ -36,6 +36,11 @@ var MaquetacionPorCategoria = (function() {
         var seleccion = AdaptadorInDesign.obtenerSeleccion();
         var pagina = AdaptadorInDesign.obtenerPaginaActiva();
 
+        if (seleccion.length > 1) {
+            MaquetarDocumentoParaImpresion.procesar(config);
+            return;
+        }
+
         Depuracion.registrar("Procesando " + seleccion.length + " elemento(s)...");
 
         for (var i = 0; i < seleccion.length; i++) {

@@ -33,6 +33,10 @@
         return obj.geometricBounds;
     };
 
+    AdaptadorInDesign.agruparElementos = function(elementos) {
+        return app.activeDocument.groups.add(elementos);
+    };
+
     AdaptadorInDesign.medirElementoEnMilimetros = function(obj) {
         var bounds = AdaptadorInDesign.obtenerBounds(obj);
         var unidadHorizontal = Unidades.obtenerUnidadHorizontal();
