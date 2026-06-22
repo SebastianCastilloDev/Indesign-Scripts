@@ -1,6 +1,7 @@
 var Aplicacion = (function() {
 
-    function iniciarDepuracion() {
+    function iniciarDepuracion(config) {
+        Depuracion.configurar(config);
         Depuracion.limpiar();
         Depuracion.registrar("--- Inicio de maquetación ---");
         Depuracion.registrar("Fecha: " + new Date().toLocaleDateString());
@@ -26,7 +27,7 @@ var Aplicacion = (function() {
 
     function ejecutar(config) {
         try {
-            iniciarDepuracion();
+            iniciarDepuracion(config);
             ejecutarFlujoPrincipal(config);
             finalizarDepuracion();
         } catch (e) {

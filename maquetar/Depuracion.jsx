@@ -3,6 +3,11 @@ var Depuracion = (function() {
     var LINEAS = [];
     var LINEA_PUNTO = 8;
     var CANTIDAD_LINEAS_MOSTRAR = 1000;
+    var DETALLADA = false;
+
+    function configurar(config) {
+        DETALLADA = !!(config && config.depuracion && config.depuracion.detallada);
+    }
 
     function limpiar() {
         LINEAS = [];
@@ -10,6 +15,15 @@ var Depuracion = (function() {
 
     function registrar(texto) {
         LINEAS.push(texto);
+    }
+
+    function registrarDetalle(texto) {
+        if (!DETALLADA) return;
+        registrar(texto);
+    }
+
+    function esDetallada() {
+        return DETALLADA;
     }
 
     function obtenerLineas() {
@@ -42,8 +56,11 @@ var Depuracion = (function() {
     }
 
     return {
+        configurar: configurar,
         limpiar: limpiar,
         registrar: registrar,
+        registrarDetalle: registrarDetalle,
+        esDetallada: esDetallada,
         mostrar: mostrar,
         mostrarError: mostrarError,
         obtenerLineas: obtenerLineas

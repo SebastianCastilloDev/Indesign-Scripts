@@ -5,19 +5,23 @@ var RepeticionDeCuadrantes = (function() {
     }
 
     function registrarDuplicacion(etiqueta, pagina, obj, centroNombre, centro, posicionNombre, posicion, deltaNombre, delta) {
+        if (!Depuracion.esDetallada()) return;
+
         var bounds = obj.geometricBounds;
-        Depuracion.registrar("  DEBUG " + etiqueta + ":");
-        Depuracion.registrar("    page bounds: [" + pagina.bounds.join(", ") + "]");
-        Depuracion.registrar("    " + centroNombre + ": " + centro);
-        Depuracion.registrar("    obj bounds: [" + bounds.join(", ") + "]");
-        Depuracion.registrar("    " + posicionNombre + ": " + posicion);
-        Depuracion.registrar("    " + deltaNombre + ": " + delta);
+        Depuracion.registrarDetalle("  DEBUG " + etiqueta + ":");
+        Depuracion.registrarDetalle("    page bounds: [" + pagina.bounds.join(", ") + "]");
+        Depuracion.registrarDetalle("    " + centroNombre + ": " + centro);
+        Depuracion.registrarDetalle("    obj bounds: [" + bounds.join(", ") + "]");
+        Depuracion.registrarDetalle("    " + posicionNombre + ": " + posicion);
+        Depuracion.registrarDetalle("    " + deltaNombre + ": " + delta);
     }
 
     function registrarDuplicadoMovido(etiquetaCentro, dup, indiceA, indiceB) {
+        if (!Depuracion.esDetallada()) return;
+
         var bounds = dup.geometricBounds;
-        Depuracion.registrar("    dup bounds despues de mover: [" + bounds.join(", ") + "]");
-        Depuracion.registrar("    nuevo " + etiquetaCentro + ": " + ((bounds[indiceA] + bounds[indiceB]) / 2));
+        Depuracion.registrarDetalle("    dup bounds despues de mover: [" + bounds.join(", ") + "]");
+        Depuracion.registrarDetalle("    nuevo " + etiquetaCentro + ": " + ((bounds[indiceA] + bounds[indiceB]) / 2));
     }
 
     function duplicarHorizontal(obj, pagina) {
@@ -54,20 +58,20 @@ var RepeticionDeCuadrantes = (function() {
 
     function rotarMediaVueltaConCorreccion(obj, boundsObjetivo) {
         var anguloActual = typeof obj.rotationAngle === "number" ? obj.rotationAngle : 0;
-        Depuracion.registrar("  DEBUG rotarMediaVuelta:");
-        Depuracion.registrar("    angulo antes: " + anguloActual);
-        Depuracion.registrar("    bounds objetivo: [" + boundsObjetivo.join(", ") + "]");
+        Depuracion.registrarDetalle("  DEBUG rotarMediaVuelta:");
+        Depuracion.registrarDetalle("    angulo antes: " + anguloActual);
+        Depuracion.registrarDetalle("    bounds objetivo: [" + boundsObjetivo.join(", ") + "]");
         DepuracionGeometrica.registrarBounds("antes de rotar", obj);
 
         obj.rotationAngle = anguloActual + 180;
 
-        Depuracion.registrar("    angulo despues: " + obj.rotationAngle);
+        Depuracion.registrarDetalle("    angulo despues: " + obj.rotationAngle);
         DepuracionGeometrica.registrarBounds("despues de rotar", obj);
 
         var boundsDespues = obj.geometricBounds;
         var deltaX = boundsObjetivo[1] - boundsDespues[1];
         var deltaY = boundsObjetivo[0] - boundsDespues[0];
-        Depuracion.registrar("    delta correccion post-rotacion: [" + deltaX + ", " + deltaY + "]");
+        Depuracion.registrarDetalle("    delta correccion post-rotacion: [" + deltaX + ", " + deltaY + "]");
         obj.move(undefined, [deltaX, deltaY]);
 
         DepuracionGeometrica.registrarBounds("despues de corregir posicion", obj);
@@ -76,7 +80,7 @@ var RepeticionDeCuadrantes = (function() {
     }
 
     function duplicarEnCuadrantes(obj, pagina) {
-        Depuracion.registrar("  DEBUG objeto base antes de duplicar:");
+        Depuracion.registrarDetalle("  DEBUG objeto base antes de duplicar:");
         DepuracionGeometrica.registrarBounds("base", obj);
         DepuracionGeometrica.registrarElementosInternos("base", obj);
 

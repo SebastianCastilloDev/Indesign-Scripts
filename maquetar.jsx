@@ -6,6 +6,9 @@ var CONFIG = {
     tolerancias: {
         horizontal: 2,
         vertical: 2
+    },
+    depuracion: {
+        detallada: false
     }
 };
 
