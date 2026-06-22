@@ -92,10 +92,10 @@ var Clasificador = (function() {
 })();
 
 // ====================================================================
-// MÓDULO: InDesign
+// MÓDULO: Unidades
 // ====================================================================
 
-var InDesign = (function() {
+var Unidades = (function() {
 
     var FACTOR_A_MM = {};
     FACTOR_A_MM[MeasurementUnits.millimeters] = 1;
@@ -113,18 +113,6 @@ var InDesign = (function() {
     FACTOR_DE_MM[MeasurementUnits.points]      = 2.83464566929;
     FACTOR_DE_MM[MeasurementUnits.agates]      = 5.51181102362;
 
-    function hayDocumentoAbierto() {
-        return app.documents.length > 0;
-    }
-
-    function hayElementosSeleccionados() {
-        return app.selection.length > 0;
-    }
-
-    function obtenerSeleccionActual() {
-        return app.selection;
-    }
-
     function obtenerUnidadActual() {
         return app.activeDocument.viewPreferences.horizontalMeasurementUnits;
     }
@@ -141,12 +129,38 @@ var InDesign = (function() {
         return valor * factor;
     }
 
+    return {
+        obtenerUnidadActual: obtenerUnidadActual,
+        convertirAMilimetros: convertirAMilimetros,
+        convertirDeMilimetros: convertirDeMilimetros
+    };
+
+})();
+
+// ====================================================================
+// MÓDULO: InDesign
+// ====================================================================
+
+var InDesign = (function() {
+
+    function hayDocumentoAbierto() {
+        return app.documents.length > 0;
+    }
+
+    function hayElementosSeleccionados() {
+        return app.selection.length > 0;
+    }
+
+    function obtenerSeleccionActual() {
+        return app.selection;
+    }
+
     function medirElemento(obj) {
-        var unidad = obtenerUnidadActual();
+        var unidad = Unidades.obtenerUnidadActual();
         var bounds = obj.geometricBounds;
         return {
-            ancho: convertirAMilimetros(Math.abs(bounds[3] - bounds[1]), unidad),
-            alto: convertirAMilimetros(Math.abs(bounds[2] - bounds[0]), unidad)
+            ancho: Unidades.convertirAMilimetros(Math.abs(bounds[3] - bounds[1]), unidad),
+            alto: Unidades.convertirAMilimetros(Math.abs(bounds[2] - bounds[0]), unidad)
         };
     }
 
@@ -155,31 +169,19 @@ var InDesign = (function() {
     }
 
     function crearGuiaHorizontal(pagina, posicionY_mm) {
-        try {
-            var unidad = obtenerUnidadActual();
-            var posY = convertirDeMilimetros(posicionY_mm, unidad);
-            var guia = pagina.guides.add({location: posY});
-            guia.orientation = HorizontalOrientation.horizontal;
-            Depurador.registrar("   Guía horizontal creada en Y=" + posicionY_mm.toFixed(2) + "mm (unidad: " + unidad + ")");
-            return guia;
-        } catch (e) {
-            Depurador.registrar("   ERROR al crear guía horizontal: " + e.toString());
-            return null;
-        }
+        var unidad = Unidades.obtenerUnidadActual();
+        var posY = Unidades.convertirDeMilimetros(posicionY_mm, unidad);
+        var guia = pagina.guides.add({location: posY});
+        guia.orientation = HorizontalOrientation.horizontal;
+        return guia;
     }
 
     function crearGuiaVertical(pagina, posicionX_mm) {
-        try {
-            var unidad = obtenerUnidadActual();
-            var posX = convertirDeMilimetros(posicionX_mm, unidad);
-            var guia = pagina.guides.add({location: posX});
-            guia.orientation = HorizontalOrientation.vertical;
-            Depurador.registrar("   Guía vertical creada en X=" + posicionX_mm.toFixed(2) + "mm (unidad: " + unidad + ")");
-            return guia;
-        } catch (e) {
-            Depurador.registrar("   ERROR al crear guía vertical: " + e.toString());
-            return null;
-        }
+        var unidad = Unidades.obtenerUnidadActual();
+        var posX = Unidades.convertirDeMilimetros(posicionX_mm, unidad);
+        var guia = pagina.guides.add({location: posX});
+        guia.orientation = HorizontalOrientation.vertical;
+        return guia;
     }
 
     return {
@@ -189,10 +191,7 @@ var InDesign = (function() {
         medirElemento: medirElemento,
         obtenerPaginaActiva: obtenerPaginaActiva,
         crearGuiaHorizontal: crearGuiaHorizontal,
-        crearGuiaVertical: crearGuiaVertical,
-        obtenerUnidadActual: obtenerUnidadActual,
-        convertirAMilimetros: convertirAMilimetros,
-        convertirDeMilimetros: convertirDeMilimetros
+        crearGuiaVertical: crearGuiaVertical
     };
 
 })();
@@ -204,13 +203,13 @@ var InDesign = (function() {
 var Guiador = (function() {
 
     function calcularCentroPagina(pagina) {
-        var unidad = InDesign.obtenerUnidadActual();
+        var unidad = Unidades.obtenerUnidadActual();
         var bounds = pagina.bounds;
         var medioX = (bounds[1] + bounds[3]) / 2;
         var medioY = (bounds[0] + bounds[2]) / 2;
         return {
-            x: InDesign.convertirAMilimetros(medioX, unidad),
-            y: InDesign.convertirAMilimetros(medioY, unidad)
+            x: Unidades.convertirAMilimetros(medioX, unidad),
+            y: Unidades.convertirAMilimetros(medioY, unidad)
         };
     }
 
@@ -288,6 +287,89 @@ var Depurador = (function() {
 })();
 
 // ====================================================================
+// MÓDULO: Validador
+// ====================================================================
+
+var Validador = (function() {
+
+    function validarEntorno() {
+        Depurador.registrar("=== INICIO DEPURACIÓN ===");
+
+        if (!InDesign.hayDocumentoAbierto()) {
+            Depurador.registrar("ERROR: No hay documento abierto.");
+            Depurador.mostrar();
+            return false;
+        }
+
+        if (!InDesign.hayElementosSeleccionados()) {
+            Depurador.registrar("ERROR: No hay elementos seleccionados.");
+            Depurador.mostrar();
+            return false;
+        }
+
+        return true;
+    }
+
+    return {
+        validarEntorno: validarEntorno
+    };
+
+})();
+
+// ====================================================================
+// MÓDULO: Procesador
+// ====================================================================
+
+var Procesador = (function() {
+
+    function analizarElemento(obj) {
+        var dim = InDesign.medirElemento(obj);
+        var categoria = Clasificador.clasificar(dim.ancho, dim.alto);
+        Depurador.registrar("Elemento: " + dim.ancho.toFixed(2) + " x " + dim.alto.toFixed(2) + " mm -> " + categoria);
+        return {
+            categoria: categoria,
+            ancho: dim.ancho,
+            alto: dim.alto
+        };
+    }
+
+    function aplicarAccionesSegunCategoria(resultado) {
+        if (resultado.categoria === "Cuarto Carta") {
+            Depurador.registrar("-> Categoría Cuarto Carta: creando guías al centro...");
+            var pagina = InDesign.obtenerPaginaActiva();
+            if (pagina) {
+                Guiador.trazarGuiasAlCentro(pagina);
+            } else {
+                Depurador.registrar("-> ERROR: No se pudo obtener la página activa.");
+            }
+        }
+    }
+
+    function procesarSeleccion() {
+        var seleccion = InDesign.obtenerSeleccionActual();
+        var resultados = [];
+
+        for (var i = 0; i < seleccion.length; i++) {
+            var resultado = analizarElemento(seleccion[i]);
+            aplicarAccionesSegunCategoria(resultado);
+            resultados.push({
+                indice: i + 1,
+                categoria: resultado.categoria || "Sin categoría",
+                ancho: resultado.ancho,
+                alto: resultado.alto
+            });
+        }
+
+        return resultados;
+    }
+
+    return {
+        procesarSeleccion: procesarSeleccion
+    };
+
+})();
+
+// ====================================================================
 // MÓDULO: Presentador
 // ====================================================================
 
@@ -312,50 +394,11 @@ var Presentador = (function() {
 // ====================================================================
 
 function ejecutar() {
-
     Depurador.limpiar();
-    Depurador.registrar("=== INICIO DEPURACIÓN ===");
 
-    if (!InDesign.hayDocumentoAbierto()) {
-        Depurador.registrar("ERROR: No hay documento abierto.");
-        Depurador.mostrar();
-        return;
-    }
+    if (!Validador.validarEntorno()) return;
 
-    if (!InDesign.hayElementosSeleccionados()) {
-        Depurador.registrar("ERROR: No hay elementos seleccionados.");
-        Depurador.mostrar();
-        return;
-    }
-
-    var seleccion = InDesign.obtenerSeleccionActual();
-    var resultados = [];
-
-    for (var i = 0; i < seleccion.length; i++) {
-        var dim = InDesign.medirElemento(seleccion[i]);
-        var categoria = Clasificador.clasificar(dim.ancho, dim.alto);
-
-        Depurador.registrar("Elemento " + (i + 1) + ": " + dim.ancho.toFixed(2) + " x " + dim.alto.toFixed(2) + " mm -> " + categoria);
-
-        if (categoria === "Cuarto Carta") {
-            Depurador.registrar("-> Coincide con Cuarto Carta. Intentando crear guías...");
-            var pagina = InDesign.obtenerPaginaActiva();
-            if (pagina) {
-                Depurador.registrar("-> Página activa obtenida");
-                Guiador.trazarGuiasAlCentro(pagina);
-                Depurador.registrar("-> Proceso de guías completado.");
-            } else {
-                Depurador.registrar("-> ERROR: No se pudo obtener la página activa.");
-            }
-        }
-
-        resultados.push({
-            indice: i + 1,
-            categoria: categoria || "Sin categoría",
-            ancho: dim.ancho,
-            alto: dim.alto
-        });
-    }
+    var resultados = Procesador.procesarSeleccion();
 
     Presentador.volcarResultados(resultados);
     Depurador.mostrar();
