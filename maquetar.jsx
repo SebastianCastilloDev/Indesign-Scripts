@@ -29,15 +29,10 @@ var Medidas = (function() {
     var MEDIA_CARTA = calcularMediaCarta();
     var CUARTO_CARTA = calcularCuartoCarta();
 
-    var toleranciaHorizontal = 2;
-    var toleranciaVertical = 2;
-
     return {
         CARTA: CARTA,
         MEDIA_CARTA: MEDIA_CARTA,
         CUARTO_CARTA: CUARTO_CARTA,
-        toleranciaHorizontal: toleranciaHorizontal,
-        toleranciaVertical: toleranciaVertical,
         obtenerCatalogo: function() {
             return [CARTA, MEDIA_CARTA, CUARTO_CARTA];
         }
