@@ -37,6 +37,10 @@
         return app.activeDocument.groups.add(elementos);
     };
 
+    AdaptadorInDesign.desagruparElemento = function(obj) {
+        return obj.ungroup();
+    };
+
     AdaptadorInDesign.medirElementoEnMilimetros = function(obj) {
         var bounds = AdaptadorInDesign.obtenerBounds(obj);
         var unidadHorizontal = Unidades.obtenerUnidadHorizontal();
