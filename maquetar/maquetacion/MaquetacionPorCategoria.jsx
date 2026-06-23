@@ -91,6 +91,13 @@ var MaquetacionPorCategoria = (function() {
         var grupo = AdaptadorInDesign.agruparElementos(convertirSeleccionEnArray(seleccion));
 
         try {
+            if (estaFueraDePagina(grupo, pagina)) {
+                Depuracion.registrar("  Selección fuera de la página. Desagrupando.");
+                alert("La selección está fuera de la página.\nMuévela dentro de la página antes de ejecutar el script.");
+                desagruparSeguro(grupo);
+                return;
+            }
+
             var resultado = analizarElemento(grupo, config.tolerancias);
             var copias = aplicarAccionSegunCategoria(resultado, grupo, pagina);
 
