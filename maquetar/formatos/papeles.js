@@ -1,9 +1,6 @@
 var Papeles = (function() {
 
-    // El diseño SIEMPRE se hace sobre una hoja Carta tradicional en InDesign.
-    // El "alto real" de impresión puede ser menor (Tamaño 14 = 274 mm).
     var ANCHO_MM = 215.9;
-    var ALTO_DISENO_MM = 279.4;
 
     // Códigos de variante (= cómo se reparte la selección en la hoja).
     // Son las claves de despacho hacia cada handler de imposición.
@@ -14,21 +11,21 @@ var Papeles = (function() {
     };
 
     // Un papel queda definido por su alto real; todo lo demás se deriva.
-    function crearPapel(nombre, altoMm) {
+    // verificacionMm (opcional): guías de corte para cuando el formato real NO
+    // coincide con la hoja de diseño de InDesign. Solo el Tamaño 14 las usa (se
+    // diseña sobre Carta y se corta en 274). Los demás se diseñan sobre su
+    // propia hoja, así que no llevan guía de corte.
+    function crearPapel(nombre, altoMm, verificacionMm) {
         return {
             nombre: nombre,
             ancho: ANCHO_MM,
             alto: altoMm,
 
             // Ejes de plegado, en mm desde el borde superior/izquierdo de la hoja.
-            // En Carta el eje horizontal coincide con el centro real (139.7);
-            // en Tamaño 14 cae en 137, que NO es el centro de la hoja de diseño.
             ejeHorizontalMm: altoMm / 2,
             ejeVerticalMm: ANCHO_MM / 2,
 
-            // Si el alto real difiere de la hoja de diseño, se marca su borde
-            // como guía de corte (Tamaño 14 → [274]; Carta → []).
-            verificacionMm: (altoMm === ALTO_DISENO_MM) ? [] : [altoMm],
+            verificacionMm: verificacionMm || [],
 
             // Catálogo de variantes para clasificar la selección contra ESTE papel.
             obtenerCatalogo: function() {
@@ -41,17 +38,31 @@ var Papeles = (function() {
         };
     }
 
-    var TAMANO_CARTA = crearPapel("Tamaño Carta", ALTO_DISENO_MM);
-    var TAMANO_14    = crearPapel("Tamaño 14", 274);
+    // Para agregar un papel: definirlo acá y sumarlo a TODOS. El modal se arma
+    // solo desde esa lista; las variantes y handlers se reutilizan sin tocar nada.
+    var TAMANO_CARTA  = crearPapel("Tamaño Carta", 279.4);
+    var TAMANO_14     = crearPapel("Tamaño 14", 274, [274]);
+    var TAMANO_OFICIO = crearPapel("Tamaño Oficio", 330);
+
+    var TODOS = [TAMANO_CARTA, TAMANO_14, TAMANO_OFICIO];
+
+    function todos() {
+        return TODOS;
+    }
 
     function porNombre(nombre) {
-        return (nombre === TAMANO_14.nombre) ? TAMANO_14 : TAMANO_CARTA;
+        for (var i = 0; i < TODOS.length; i++) {
+            if (TODOS[i].nombre === nombre) return TODOS[i];
+        }
+        return TAMANO_CARTA;
     }
 
     return {
         VARIANTE: VARIANTE,
         TAMANO_CARTA: TAMANO_CARTA,
         TAMANO_14: TAMANO_14,
+        TAMANO_OFICIO: TAMANO_OFICIO,
+        todos: todos,
         porNombre: porNombre
     };
 

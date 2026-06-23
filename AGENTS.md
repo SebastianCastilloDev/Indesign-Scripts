@@ -20,7 +20,7 @@ JavaScript/
     formatos/
       catalogoDeFormatos.js       puro: catálogo legacy (default del clasificador)
       clasificacionDeFormato.js   puro: clasifica dimensiones → variante (completo/media/cuarto)
-      papeles.js                  puro: papeles (Tamaño Carta / Tamaño 14) + ejes + catálogo derivado
+      papeles.js                  puro: papeles (Carta / 14 / Oficio) + ejes + verificación + catálogo
       CatalogoDeFormatos.jsx      wrapper
       ClasificacionDeFormato.jsx  wrapper
     geometria/
@@ -38,7 +38,7 @@ JavaScript/
       MaquetarCuarto.jsx          variante 4-up: 4 cuadrantes con rotación 180°
       MaquetacionPorCategoria.jsx despacha la selección a la variante según su tamaño
     ui/
-      SelectorDePapel.jsx         modal ScriptUI: elige el papel (Tamaño 14 / Carta)
+      SelectorDePapel.jsx         modal ScriptUI (data-driven): elige el papel
     depuracion/
       Depuracion.jsx              log a un text frame (sin alert para flujo normal)
       DepuracionGeometrica.jsx    log detallado de bounds/rotaciones (modo detallado)
@@ -119,7 +119,7 @@ Si un `#include` falla (p. ej. en InDesign 2025 o anterior que no lo soporte des
 - **`Unidades.jsx`** — agrega la capa InDesign: lectura de `viewPreferences` y forzado temporal de reglas a puntos con `ejecutarConUnidadesEnPuntos()` (guarda/restaura en `finally`).
 
 ### formatos/
-- **`papeles.js`** — define los dos **papeles de impresión**: **Tamaño Carta** (alto 279.4) y **Tamaño 14** (alto 274, mismo ancho 215.9). Cada papel deriva de su `alto`: ejes de plegado (`ejeHorizontalMm` = alto/2, `ejeVerticalMm` = ancho/2), guías de verificación (`[274]` en Tamaño 14, `[]` en Carta) y `obtenerCatalogo()` con las variantes completo/media/cuarto. Expone `VARIANTE`, `TAMANO_CARTA`, `TAMANO_14`, `porNombre()`. **El papel se diseña siempre sobre hoja Carta**; Tamaño 14 solo cambia el formato real, no la hoja de InDesign.
+- **`papeles.js`** — define los **papeles de impresión** (mismo ancho 215.9, distinto alto): **Tamaño Carta** (279.4), **Tamaño 14** (274) y **Tamaño Oficio** (330). Cada papel deriva de su `alto`: ejes de plegado (`ejeHorizontalMm` = alto/2, `ejeVerticalMm` = ancho/2) y `obtenerCatalogo()` con las variantes completo/media/cuarto. La `verificacionMm` es **explícita** (solo el Tamaño 14 la usa: `[274]`) — marca el corte cuando el formato real difiere de la hoja de diseño de InDesign. El **Tamaño 14 se diseña sobre hoja Carta** y se corta en 274; Carta y Oficio se diseñan sobre su propia hoja (sin guía de corte). Expone `VARIANTE`, `TAMANO_CARTA`, `TAMANO_14`, `TAMANO_OFICIO`, `todos()`, `porNombre()`.
 - **`catalogoDeFormatos.js`** — catálogo legacy (Carta/Media/Cuarto Carta); sigue siendo el **default** del clasificador cuando no se le pasa un catálogo. Expone `obtenerCatalogo()`.
 - **`clasificacionDeFormato.js`** — `clasificar(dimensiones, tolerancias, catalogo?)`: compara (directo y rotado) y retorna el nombre de menor área que cabe, o `null`. Con el catálogo de un papel devuelve la **variante** (`completo`/`media`/`cuarto`); sin catálogo usa el global `CatalogoDeFormatos`.
 - **`CatalogoDeFormatos.jsx` / `ClasificacionDeFormato.jsx`** — wrappers delgados (`#include` del `.js`). `papeles.js` se incluye directo (puro, sin capa InDesign).
@@ -140,7 +140,7 @@ Si un `#include` falla (p. ej. en InDesign 2025 o anterior que no lo soporte des
 - **`MaquetarMedia.jsx`** — variante **media** (2-up): valida que el elemento esté sobre el eje de plegado, traza la guía de plegado + verificación, y duplica a la mitad inferior sin rotar. Devuelve `[copia]` o `null`. API: `procesarElemento(obj, pagina, papel)`, `validarObjetoBase`.
 - **`MaquetarCuarto.jsx`** — variante **cuarto** (4-up): valida cuadrante superior izquierdo, traza ambos ejes + verificación, replica en 4 cuadrantes (inferiores rotados 180°). Devuelve el array de copias o `null`. API simétrica con Media. *(Validar antes de trazar evita guías huérfanas.)*
 - **`MaquetacionPorCategoria.jsx`** — despachador. Recibe el **papel** (del modal). Para selección única mide/clasifica directo; para múltiple la **agrupa temporalmente**, mide el bounding box combinado, clasifica la **variante** contra `papel.obtenerCatalogo()` y al terminar **desagrupa todo** (grupo + copias) para no penalizar la impresión. Valida que la selección esté dentro de la página. Enruta vía `MANEJADORES[variante](obj, pagina, papel)`.
-- **Para agregar un nuevo papel** (p. ej. otro autocopiativo): (1) `crearPapel("Nombre", altoMm)` en `papeles.js` + exportarlo, (2) agregar la opción en `SelectorDePapel.jsx`. Las 3 variantes y sus handlers se reutilizan solos.
+- **Para agregar un nuevo papel** (p. ej. otro tamaño): un solo archivo. En `papeles.js`: `crearPapel("Nombre", altoMm, verificacionMm?)`, sumarlo a `TODOS` y exportarlo. El modal se arma solo y las 3 variantes + handlers se reutilizan sin tocar nada más.
 - **Para agregar una nueva variante**: (1) crear `MaquetarNueva.jsx` con `procesarElemento(obj, pagina, papel)`, (2) registrar `MANEJADORES[Papeles.VARIANTE.NUEVA] = MaquetarNueva.procesarElemento`, (3) agregar la variante al catálogo de cada papel en `papeles.js`, (4) incluir el `.jsx` antes del despachador.
 
 ### depuracion/
@@ -148,7 +148,7 @@ Si un `#include` falla (p. ej. en InDesign 2025 o anterior que no lo soporte des
 - **`DepuracionGeometrica.jsx`** — log detallado de bounds, centros, ancho/alto y rotaciones de un objeto y sus elementos internos (solo en modo detallado).
 
 ### ui/
-- **`SelectorDePapel.jsx`** — modal ScriptUI (`Window("dialog")`). Lista los papeles con **Tamaño 14 preseleccionado** (configurable por `CONFIG.papelPorDefecto`). Devuelve el papel elegido (`Papeles.TAMANO_*`) o `null` si se cancela. Depende del global `Papeles`.
+- **`SelectorDePapel.jsx`** — modal ScriptUI (`Window("dialog")`). Se arma **dinámicamente desde `Papeles.todos()`** (un radio por papel), con `CONFIG.papelPorDefecto` preseleccionado. Devuelve el papel elegido o `null` si se cancela. Agregar un papel no requiere tocar este archivo.
 
 ### aplicacion/
 - **`ValidacionDeEjecucion.jsx`** — precondiciones: documento abierto + selección existente.

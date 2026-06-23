@@ -75,9 +75,48 @@ describe("Papeles", function() {
         });
     });
 
+    describe("Tamaño Oficio", function() {
+        var oficio = Papeles.TAMANO_OFICIO;
+
+        it("mide 215.9 x 330 mm", function() {
+            expect(oficio.ancho).toBe(215.9);
+            expect(oficio.alto).toBe(330);
+        });
+
+        it("eje horizontal en 165 (= 330/2)", function() {
+            expect(oficio.ejeHorizontalMm).toBe(165);
+        });
+
+        it("sin guías de verificación (se diseña en su propia hoja Oficio)", function() {
+            expect(oficio.verificacionMm).toEqual([]);
+        });
+
+        it("catálogo derivado de 330", function() {
+            var cat = oficio.obtenerCatalogo();
+            expect(cat[0].alto).toBe(330);   // completo
+            expect(cat[1].alto).toBe(165);   // media
+            expect(cat[2].alto).toBe(165);   // cuarto
+            expect(cat[2].ancho).toBeCloseTo(107.95, 5);
+        });
+    });
+
+    describe("todos", function() {
+        it("devuelve los 3 papeles", function() {
+            var todos = Papeles.todos();
+            expect(todos).toHaveLength(3);
+            expect(todos).toContain(Papeles.TAMANO_CARTA);
+            expect(todos).toContain(Papeles.TAMANO_14);
+            expect(todos).toContain(Papeles.TAMANO_OFICIO);
+        });
+    });
+
     describe("porNombre", function() {
         it("devuelve Tamaño 14 por su nombre", function() {
             expect(Papeles.porNombre("Tamaño 14")).toBe(Papeles.TAMANO_14);
+        });
+
+        it("devuelve Tamaño Oficio por su nombre", function() {
+            expect(Papeles.porNombre("Tamaño Oficio")).toBe(Papeles.TAMANO_OFICIO);
         });
 
         it("devuelve Tamaño Carta por su nombre", function() {
