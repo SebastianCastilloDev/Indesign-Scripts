@@ -2,7 +2,7 @@
 // NUCLEO PURO (resolución de enumeradores)
 // ====================================================================
 
-#include "lib/adaptadores/adaptadorInDesign.js"
+#include "adaptadorInDesign.js"
 
 // ====================================================================
 // CAPA InDesign (API-dependent)
@@ -31,6 +31,14 @@
 
     AdaptadorInDesign.obtenerBounds = function(obj) {
         return obj.geometricBounds;
+    };
+
+    AdaptadorInDesign.agruparElementos = function(elementos) {
+        return app.activeDocument.groups.add(elementos);
+    };
+
+    AdaptadorInDesign.desagruparElemento = function(obj) {
+        return obj.ungroup();
     };
 
     AdaptadorInDesign.medirElementoEnMilimetros = function(obj) {

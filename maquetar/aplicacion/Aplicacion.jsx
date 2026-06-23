@@ -1,13 +1,10 @@
 var Aplicacion = (function() {
 
-    function iniciarDepuracion() {
+    function iniciarDepuracion(config) {
+        Depuracion.configurar(config);
         Depuracion.limpiar();
         Depuracion.registrar("--- Inicio de maquetación ---");
         Depuracion.registrar("Fecha: " + new Date().toLocaleDateString());
-    }
-
-    function configurarProcesos(config) {
-        MaquetacionPorCategoria.procesar(config);
     }
 
     function ejecutarFlujoPrincipal(config) {
@@ -15,8 +12,15 @@ var Aplicacion = (function() {
             return;
         }
 
+        var papel = SelectorDePapel.elegir(config.papelPorDefecto);
+        if (papel === null) {
+            Depuracion.registrar("Operación cancelada por el usuario.");
+            return;
+        }
+        Depuracion.registrar("Papel elegido: " + papel.nombre);
+
         Unidades.ejecutarConUnidadesEnPuntos(function() {
-            configurarProcesos(config);
+            MaquetacionPorCategoria.procesar(config, papel);
         });
     }
 
@@ -26,12 +30,11 @@ var Aplicacion = (function() {
 
     function ejecutar(config) {
         try {
-            iniciarDepuracion();
+            iniciarDepuracion(config);
             ejecutarFlujoPrincipal(config);
             finalizarDepuracion();
         } catch (e) {
-            Depuracion.registrar("Error fatal: " + e.toString());
-            Depuracion.mostrar();
+            Depuracion.mostrarError("Error fatal: " + e.toString());
         }
     }
 

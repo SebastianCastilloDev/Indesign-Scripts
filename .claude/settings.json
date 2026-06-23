@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(set -e)",
+      "Bash(git mv *)",
+      "PowerShell(npm test 2>&1)",
+      "Skill(code-review)",
+      "Skill(code-review:*)",
+      "Bash(git diff *)"
+    ]
+  }
+}

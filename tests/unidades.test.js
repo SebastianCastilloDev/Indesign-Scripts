@@ -8,7 +8,7 @@ global.MeasurementUnits = {
     agates:      2053331557
 };
 
-var Unidades = require("../maquetar/lib/unidades/unidades.js");
+var Unidades = require("../maquetar/unidades/unidades.js");
 
 describe("Unidades", function() {
 
@@ -51,6 +51,23 @@ describe("Unidades", function() {
         it("debe convertir valores negativos correctamente", function() {
             var resultado = Unidades.convertirPuntosAMilimetros(-10);
             expect(resultado).toBeCloseTo(-3.5277777778, 10);
+        });
+
+    });
+
+    describe("convertirMilimetrosAPuntos", function() {
+
+        it("debe convertir 0 mm a 0 puntos", function() {
+            expect(Unidades.convertirMilimetrosAPuntos(0)).toBe(0);
+        });
+
+        it("debe convertir 25.4 mm a ~72 puntos (1 pulgada)", function() {
+            expect(Unidades.convertirMilimetrosAPuntos(25.4)).toBeCloseTo(72, 5);
+        });
+
+        it("debe ser el inverso de convertirPuntosAMilimetros", function() {
+            var pts = Unidades.convertirMilimetrosAPuntos(137);
+            expect(Unidades.convertirPuntosAMilimetros(pts)).toBeCloseTo(137, 6);
         });
 
     });

@@ -1,4 +1,4 @@
-var CalculoDeMedidas = (function() {
+var CatalogoDeFormatos = (function() {
 
     var CARTA = {
         nombre: "Carta",
@@ -39,5 +39,5 @@ var CalculoDeMedidas = (function() {
 })();
 
 if (typeof module !== "undefined" && module.exports) {
-    module.exports = CalculoDeMedidas;
+    module.exports = CatalogoDeFormatos;
 }

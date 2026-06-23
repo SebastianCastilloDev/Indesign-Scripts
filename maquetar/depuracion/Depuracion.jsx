@@ -2,7 +2,15 @@ var Depuracion = (function() {
 
     var LINEAS = [];
     var LINEA_PUNTO = 8;
-    var CANTIDAD_LINEAS_MOSTRAR = 20;
+    var CANTIDAD_LINEAS_MOSTRAR = 1000;
+    var DETALLADA = false;
+    var MOSTRAR = false;
+
+    function configurar(config) {
+        var dep = config && config.depuracion;
+        DETALLADA = !!(dep && dep.detallada);
+        MOSTRAR   = !!(dep && dep.mostrar);
+    }
 
     function limpiar() {
         LINEAS = [];
@@ -12,11 +20,17 @@ var Depuracion = (function() {
         LINEAS.push(texto);
     }
 
-    function obtenerLineas() {
-        return LINEAS;
+    function registrarDetalle(texto) {
+        if (!DETALLADA) return;
+        registrar(texto);
     }
 
-    function mostrar() {
+    function esDetallada() {
+        return DETALLADA;
+    }
+
+    function mostrar(forzar) {
+        if (!MOSTRAR && !forzar) return;
         try {
             if (!AdaptadorInDesign.hayDocumentoAbierto()) return;
             var pagina = AdaptadorInDesign.obtenerPrimeraPagina();
@@ -38,15 +52,17 @@ var Depuracion = (function() {
 
     function mostrarError(mensaje) {
         registrar("ERROR: " + mensaje);
-        mostrar();
+        mostrar(true);
     }
 
     return {
+        configurar: configurar,
         limpiar: limpiar,
         registrar: registrar,
+        registrarDetalle: registrarDetalle,
+        esDetallada: esDetallada,
         mostrar: mostrar,
-        mostrarError: mostrarError,
-        obtenerLineas: obtenerLineas
+        mostrarError: mostrarError
     };
 
 })();

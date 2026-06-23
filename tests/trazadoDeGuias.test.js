@@ -1,4 +1,5 @@
-var TrazadoDeGuias = require("../maquetar/lib/geometria/trazadoDeGuias.js");
+global.Bounds = require("../maquetar/geometria/bounds.js");
+var TrazadoDeGuias = require("../maquetar/geometria/trazadoDeGuias.js");
 
 describe("TrazadoDeGuias", function() {
 

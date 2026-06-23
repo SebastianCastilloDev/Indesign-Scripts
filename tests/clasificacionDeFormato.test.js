@@ -1,10 +1,11 @@
-// ClasificacionDeFormato depende de CalculoDeMedidas global
-global.CalculoDeMedidas = require("../maquetar/lib/formatos/calculoDeMedidas.js");
-var ClasificacionDeFormato = require("../maquetar/lib/formatos/clasificacionDeFormato.js");
+// ClasificacionDeFormato depende de CatalogoDeFormatos global
+global.CatalogoDeFormatos = require("../maquetar/formatos/catalogoDeFormatos.js");
+var ClasificacionDeFormato = require("../maquetar/formatos/clasificacionDeFormato.js");
+var Papeles = require("../maquetar/formatos/papeles.js");
 
-var CARTA = CalculoDeMedidas.CARTA;
-var MEDIA_CARTA = CalculoDeMedidas.MEDIA_CARTA;
-var CUARTO_CARTA = CalculoDeMedidas.CUARTO_CARTA;
+var CARTA = CatalogoDeFormatos.CARTA;
+var MEDIA_CARTA = CatalogoDeFormatos.MEDIA_CARTA;
+var CUARTO_CARTA = CatalogoDeFormatos.CUARTO_CARTA;
 
 describe("ClasificacionDeFormato", function() {
 
@@ -87,6 +88,30 @@ describe("ClasificacionDeFormato", function() {
                 { horizontal: 2, vertical: 2 }
             );
             expect(resultado).toBeNull();
+        });
+
+    });
+
+    describe("clasificar contra el catálogo de un papel (variantes)", function() {
+
+        var catCarta = Papeles.TAMANO_CARTA.obtenerCatalogo();
+        var cat14 = Papeles.TAMANO_14.obtenerCatalogo();
+        var tol = { horizontal: 2, vertical: 2 };
+
+        it("selección tamaño completo → 'completo'", function() {
+            expect(ClasificacionDeFormato.clasificar({ ancho: 215.9, alto: 279.4 }, tol, catCarta)).toBe("completo");
+        });
+
+        it("selección tamaño media → 'media'", function() {
+            expect(ClasificacionDeFormato.clasificar({ ancho: 215.9, alto: 139.7 }, tol, catCarta)).toBe("media");
+        });
+
+        it("selección tamaño cuarto → 'cuarto'", function() {
+            expect(ClasificacionDeFormato.clasificar({ ancho: 107.95, alto: 139.7 }, tol, catCarta)).toBe("cuarto");
+        });
+
+        it("media de Tamaño 14 (215.9 x 137) → 'media' con el catálogo de Tamaño 14", function() {
+            expect(ClasificacionDeFormato.clasificar({ ancho: 215.9, alto: 137 }, tol, cat14)).toBe("media");
         });
 
     });
