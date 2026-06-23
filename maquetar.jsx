@@ -8,7 +8,7 @@ var CONFIG = {
         vertical: 2
     },
     depuracion: {
-        detallada: false
+        detallada: true
     }
 };
 
