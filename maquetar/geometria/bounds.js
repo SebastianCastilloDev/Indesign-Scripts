@@ -23,11 +23,16 @@ var Bounds = (function() {
                objBounds.bottom <= eje;
     }
 
-    function estaEnCuadranteSuperiorIzquierdo(objBounds, paginaBounds) {
+    // ejeX/ejeY (opcionales): líneas de plegado. Si se omiten, usan el centro
+    // de la página. El eje vertical (ejeX) coincide con el centro en ambos
+    // papeles; el horizontal (ejeY) cambia en Tamaño 14 (137 en vez de 139.7).
+    function estaEnCuadranteSuperiorIzquierdo(objBounds, paginaBounds, ejeX, ejeY) {
+        var ex = (ejeX === undefined) ? centroX(paginaBounds) : ejeX;
+        var ey = (ejeY === undefined) ? centroY(paginaBounds) : ejeY;
         return objBounds.top >= paginaBounds.top &&
                objBounds.left >= paginaBounds.left &&
-               objBounds.bottom <= centroY(paginaBounds) &&
-               objBounds.right <= centroX(paginaBounds);
+               objBounds.bottom <= ey &&
+               objBounds.right <= ex;
     }
 
     // El objeto está completamente fuera de la página si no hay solapamiento

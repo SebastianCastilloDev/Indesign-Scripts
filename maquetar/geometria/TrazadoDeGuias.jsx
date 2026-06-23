@@ -28,3 +28,16 @@ TrazadoDeGuias.trazarAmbosEjes = function(pagina) {
     TrazadoDeGuias.trazarHorizontal(pagina);
     TrazadoDeGuias.trazarVertical(pagina);
 };
+
+// Y (en puntos) de una posición a `mm` del borde superior de la página.
+TrazadoDeGuias.posicionHorizontalEnPuntos = function(pagina, mm) {
+    return Bounds.dePagina(pagina).top + Unidades.convertirMilimetrosAPuntos(mm);
+};
+
+// Traza una guía horizontal a una distancia absoluta en mm del borde superior.
+// Sirve para el eje de plegado (137) y para la guía de verificación (274).
+TrazadoDeGuias.trazarGuiaHorizontalEnMm = function(pagina, mm) {
+    var y = TrazadoDeGuias.posicionHorizontalEnPuntos(pagina, mm);
+    Depuracion.registrar("Trazando guía horizontal en " + mm + " mm");
+    return AdaptadorInDesign.crearGuiaHorizontal(pagina, y);
+};
