@@ -89,18 +89,19 @@ Los módulos son variables globales sin declaración de dependencias, así que e
 1. `unidades/Unidades.jsx` — sin dependencias
 2. `formatos/CatalogoDeFormatos.jsx` — sin dependencias
 3. `formatos/ClasificacionDeFormato.jsx` → CatalogoDeFormatos
-4. `geometria/validarSuperposicion.js` — sin dependencias
-5. `indesign/AdaptadorInDesign.jsx` → Unidades
-6. `depuracion/Depuracion.jsx` → AdaptadorInDesign
-7. `depuracion/DepuracionGeometrica.jsx` → Depuracion
-8. `geometria/TrazadoDeGuias.jsx` → AdaptadorInDesign, Depuracion
-9. `aplicacion/ValidacionDeEjecucion.jsx` → AdaptadorInDesign, Depuracion
-10. `maquetacion/RepeticionDeCuadrantes.jsx` → Depuracion, DepuracionGeometrica
-11. `maquetacion/MaquetarMediaCarta.jsx` → ValidarSuperposicion, TrazadoDeGuias, RepeticionDeCuadrantes, Depuracion
-12. `maquetacion/MaquetarCuartoCarta.jsx` → + AdaptadorInDesign, ValidacionDeEjecucion, Unidades
-13. `maquetacion/MaquetacionPorCategoria.jsx` → ClasificacionDeFormato, CatalogoDeFormatos, MaquetarMediaCarta, MaquetarCuartoCarta, AdaptadorInDesign
-14. `aplicacion/PresentacionDeResultados.jsx` → Depuracion
-15. `aplicacion/Aplicacion.jsx` → todos los anteriores
+4. `geometria/bounds.js` — sin dependencias
+5. `geometria/validarSuperposicion.js` → Bounds
+6. `indesign/AdaptadorInDesign.jsx` → Unidades
+7. `depuracion/Depuracion.jsx` → AdaptadorInDesign
+8. `depuracion/DepuracionGeometrica.jsx` → Depuracion, Bounds
+9. `geometria/TrazadoDeGuias.jsx` → AdaptadorInDesign, Depuracion, Bounds
+10. `aplicacion/ValidacionDeEjecucion.jsx` → AdaptadorInDesign, Depuracion
+11. `maquetacion/RepeticionDeCuadrantes.jsx` → Bounds, Depuracion, DepuracionGeometrica
+12. `maquetacion/MaquetarMediaCarta.jsx` → Bounds, ValidarSuperposicion, TrazadoDeGuias, RepeticionDeCuadrantes, Depuracion
+13. `maquetacion/MaquetarCuartoCarta.jsx` → Bounds, ValidarSuperposicion, TrazadoDeGuias, RepeticionDeCuadrantes, AdaptadorInDesign, ValidacionDeEjecucion, Unidades, Depuracion
+14. `maquetacion/MaquetacionPorCategoria.jsx` → CatalogoDeFormatos, ClasificacionDeFormato, MaquetarMediaCarta, MaquetarCuartoCarta, AdaptadorInDesign, Depuracion
+15. `aplicacion/PresentacionDeResultados.jsx` → Depuracion
+16. `aplicacion/Aplicacion.jsx` → todos los anteriores
 
 Si un `#include` falla (p. ej. en InDesign 2025 o anterior que no lo soporte desde el panel Scripts), concatenar manualmente el contenido de los módulos directamente en el entry point.
 
