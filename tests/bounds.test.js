@@ -84,6 +84,17 @@ describe("Bounds", function() {
             var bo = { top: 110, left: 0, bottom: 190, right: 50 };
             expect(Bounds.estaEnMitadSuperior(bo, bp)).toBe(false);
         });
+
+        it("usa el ejeY explícito en vez del centro cuando se pasa", function() {
+            // eje en 80 (más arriba que el centro 100)
+            var bo = { top: 0, left: 0, bottom: 80, right: 50 };
+            expect(Bounds.estaEnMitadSuperior(bo, bp, 80)).toBe(true);
+        });
+
+        it("devuelve false si el objeto cruza el ejeY explícito", function() {
+            var bo = { top: 0, left: 0, bottom: 90, right: 50 };
+            expect(Bounds.estaEnMitadSuperior(bo, bp, 80)).toBe(false);
+        });
     });
 
     describe("estaEnCuadranteSuperiorIzquierdo", function() {

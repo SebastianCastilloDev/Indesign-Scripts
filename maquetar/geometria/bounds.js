@@ -15,9 +15,12 @@ var Bounds = (function() {
     function ancho(b) { return Math.abs(b.right - b.left); }
     function alto(b) { return Math.abs(b.bottom - b.top); }
 
-    function estaEnMitadSuperior(objBounds, paginaBounds) {
+    // ejeY (opcional, en la misma unidad que los bounds): línea de plegado.
+    // Si se omite, usa el centro de la página (comportamiento Carta media).
+    function estaEnMitadSuperior(objBounds, paginaBounds, ejeY) {
+        var eje = (ejeY === undefined) ? centroY(paginaBounds) : ejeY;
         return objBounds.top >= paginaBounds.top &&
-               objBounds.bottom <= centroY(paginaBounds);
+               objBounds.bottom <= eje;
     }
 
     function estaEnCuadranteSuperiorIzquierdo(objBounds, paginaBounds) {
