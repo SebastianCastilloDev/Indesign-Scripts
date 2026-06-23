@@ -9,8 +9,8 @@ var CONFIG = {
     },
     papelPorDefecto: "Tamaño 14",  // preselección del modal (el más común)
     depuracion: {
-        detallada: false,  // true → registra detalles geométricos internos
-        mostrar: false     // true → crea el recuadro de log al finalizar
+        detallada: true,  // true → registra detalles geométricos internos
+        mostrar: true     // true → crea el recuadro de log al finalizar
     }
 };
 
