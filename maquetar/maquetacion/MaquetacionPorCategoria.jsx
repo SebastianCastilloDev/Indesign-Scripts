@@ -1,5 +1,9 @@
 var MaquetacionPorCategoria = (function() {
 
+    var MANEJADORES = {};
+    MANEJADORES[CatalogoDeFormatos.MEDIA_CARTA.nombre]   = MaquetarMediaCarta.procesarElemento;
+    MANEJADORES[CatalogoDeFormatos.CUARTO_CARTA.nombre]  = MaquetarCuartoCarta.procesarElemento;
+
     function analizarElemento(obj, tolerancias) {
         var dimensiones = AdaptadorInDesign.medirElementoEnMilimetros(obj);
         var categoria = ClasificacionDeFormato.clasificar(dimensiones, tolerancias);
@@ -18,16 +22,14 @@ var MaquetacionPorCategoria = (function() {
             return;
         }
 
-        Depuracion.registrar("  Clasificado como: " + categoria);
-
-        if (categoria === CalculoDeMedidas.MEDIA_CARTA.nombre) {
-            MaquetarMediaCarta.procesarElemento(obj, pagina);
-        } else if (categoria === CalculoDeMedidas.CUARTO_CARTA.nombre) {
-            MaquetarDocumentoParaImpresion.procesarElemento({
-                obj: obj,
-                agrupadoTemporal: false
-            }, pagina);
+        var manejador = MANEJADORES[categoria];
+        if (!manejador) {
+            Depuracion.registrar("  Categoría sin manejador: " + categoria);
+            return;
         }
+
+        Depuracion.registrar("  Clasificado como: " + categoria);
+        manejador(obj, pagina);
     }
 
     function procesar(config) {
@@ -35,7 +37,7 @@ var MaquetacionPorCategoria = (function() {
         var pagina = AdaptadorInDesign.obtenerPaginaActiva();
 
         if (seleccion.length > 1) {
-            MaquetarDocumentoParaImpresion.procesar(config);
+            MaquetarCuartoCarta.procesar(config);
             return;
         }
 

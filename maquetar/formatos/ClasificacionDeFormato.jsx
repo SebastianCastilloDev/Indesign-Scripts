@@ -1,1 +1,1 @@
-#include "lib/formatos/clasificacionDeFormato.js"
+#include "clasificacionDeFormato.js"

@@ -1,13 +1,11 @@
 var TrazadoDeGuias = (function() {
 
     function calcularCentroHorizontal(pagina) {
-        var bounds = pagina.bounds;
-        return (bounds[1] + bounds[3]) / 2;
+        return Bounds.centroX(Bounds.dePagina(pagina));
     }
 
     function calcularCentroVertical(pagina) {
-        var bounds = pagina.bounds;
-        return (bounds[0] + bounds[2]) / 2;
+        return Bounds.centroY(Bounds.dePagina(pagina));
     }
 
     return {

@@ -12,11 +12,11 @@ var DepuracionGeometrica = (function() {
         if (!Depuracion.esDetallada()) return;
 
         try {
-            var bounds = obj.geometricBounds;
+            var b = Bounds.deObjeto(obj);
             Depuracion.registrarDetalle("    " + etiqueta + " tipo: " + obtenerNombreObjeto(obj));
-            Depuracion.registrarDetalle("    " + etiqueta + " bounds: [" + bounds.join(", ") + "]");
-            Depuracion.registrarDetalle("    " + etiqueta + " centro: [" + ((bounds[1] + bounds[3]) / 2) + ", " + ((bounds[0] + bounds[2]) / 2) + "]");
-            Depuracion.registrarDetalle("    " + etiqueta + " ancho/alto: " + Math.abs(bounds[3] - bounds[1]) + " x " + Math.abs(bounds[2] - bounds[0]));
+            Depuracion.registrarDetalle("    " + etiqueta + " bounds: top=" + b.top + " left=" + b.left + " bottom=" + b.bottom + " right=" + b.right);
+            Depuracion.registrarDetalle("    " + etiqueta + " centro: [" + Bounds.centroX(b) + ", " + Bounds.centroY(b) + "]");
+            Depuracion.registrarDetalle("    " + etiqueta + " ancho/alto: " + Bounds.ancho(b) + " x " + Bounds.alto(b));
         } catch (e) {
             Depuracion.registrarDetalle("    " + etiqueta + " bounds no disponibles: " + e.toString());
         }

@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(set -e)",
+      "Bash(git mv *)",
+      "PowerShell(npm test 2>&1)"
+    ]
+  }
+}

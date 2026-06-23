@@ -1,57 +1,54 @@
 var RepeticionDeCuadrantes = (function() {
 
-    function copiarBounds(bounds) {
-        return [bounds[0], bounds[1], bounds[2], bounds[3]];
-    }
-
     function registrarDuplicacion(etiqueta, pagina, obj, centroNombre, centro, posicionNombre, posicion, deltaNombre, delta) {
         if (!Depuracion.esDetallada()) return;
 
-        var bounds = obj.geometricBounds;
+        var bo = Bounds.deObjeto(obj);
+        var bp = Bounds.dePagina(pagina);
         Depuracion.registrarDetalle("  DEBUG " + etiqueta + ":");
-        Depuracion.registrarDetalle("    page bounds: [" + pagina.bounds.join(", ") + "]");
+        Depuracion.registrarDetalle("    page bounds: top=" + bp.top + " left=" + bp.left + " bottom=" + bp.bottom + " right=" + bp.right);
         Depuracion.registrarDetalle("    " + centroNombre + ": " + centro);
-        Depuracion.registrarDetalle("    obj bounds: [" + bounds.join(", ") + "]");
+        Depuracion.registrarDetalle("    obj bounds: top=" + bo.top + " left=" + bo.left + " bottom=" + bo.bottom + " right=" + bo.right);
         Depuracion.registrarDetalle("    " + posicionNombre + ": " + posicion);
         Depuracion.registrarDetalle("    " + deltaNombre + ": " + delta);
     }
 
-    function registrarDuplicadoMovido(etiquetaCentro, dup, indiceA, indiceB) {
+    function registrarDuplicadoMovido(etiquetaCentro, dup, centroFn) {
         if (!Depuracion.esDetallada()) return;
 
-        var bounds = dup.geometricBounds;
-        Depuracion.registrarDetalle("    dup bounds despues de mover: [" + bounds.join(", ") + "]");
-        Depuracion.registrarDetalle("    nuevo " + etiquetaCentro + ": " + ((bounds[indiceA] + bounds[indiceB]) / 2));
+        var b = Bounds.deObjeto(dup);
+        Depuracion.registrarDetalle("    dup bounds despues de mover: top=" + b.top + " left=" + b.left + " bottom=" + b.bottom + " right=" + b.right);
+        Depuracion.registrarDetalle("    nuevo " + etiquetaCentro + ": " + centroFn(b));
     }
 
     function duplicarHorizontal(obj, pagina) {
-        var pBounds = pagina.bounds;
-        var centroX = (pBounds[1] + pBounds[3]) / 2;
-        var bounds = obj.geometricBounds;
-        var nuevoLeft = 2 * centroX - bounds[3];
-        var deltaX = nuevoLeft - bounds[1];
+        var bp = Bounds.dePagina(pagina);
+        var bo = Bounds.deObjeto(obj);
+        var cx = Bounds.centroX(bp);
+        var nuevoLeft = 2 * cx - bo.right;
+        var deltaX = nuevoLeft - bo.left;
 
-        registrarDuplicacion("duplicarHorizontal", pagina, obj, "centroX", centroX, "nuevoLeft", nuevoLeft, "deltaX", deltaX);
+        registrarDuplicacion("duplicarHorizontal", pagina, obj, "centroX", cx, "nuevoLeft", nuevoLeft, "deltaX", deltaX);
 
         var dup = obj.duplicate();
         dup.move(undefined, [deltaX, 0]);
-        registrarDuplicadoMovido("centroElementoX", dup, 1, 3);
+        registrarDuplicadoMovido("centroElementoX", dup, Bounds.centroX);
 
         return dup;
     }
 
     function duplicarVertical(obj, pagina) {
-        var pBounds = pagina.bounds;
-        var centroY = (pBounds[0] + pBounds[2]) / 2;
-        var bounds = obj.geometricBounds;
-        var nuevoTop = 2 * centroY - bounds[2];
-        var deltaY = nuevoTop - bounds[0];
+        var bp = Bounds.dePagina(pagina);
+        var bo = Bounds.deObjeto(obj);
+        var cy = Bounds.centroY(bp);
+        var nuevoTop = 2 * cy - bo.bottom;
+        var deltaY = nuevoTop - bo.top;
 
-        registrarDuplicacion("duplicarVertical", pagina, obj, "centroY", centroY, "nuevoTop", nuevoTop, "deltaY", deltaY);
+        registrarDuplicacion("duplicarVertical", pagina, obj, "centroY", cy, "nuevoTop", nuevoTop, "deltaY", deltaY);
 
         var dup = obj.duplicate();
         dup.move(undefined, [0, deltaY]);
-        registrarDuplicadoMovido("centroElementoY", dup, 0, 2);
+        registrarDuplicadoMovido("centroElementoY", dup, Bounds.centroY);
 
         return dup;
     }
@@ -60,7 +57,7 @@ var RepeticionDeCuadrantes = (function() {
         var anguloActual = typeof obj.rotationAngle === "number" ? obj.rotationAngle : 0;
         Depuracion.registrarDetalle("  DEBUG rotarMediaVuelta:");
         Depuracion.registrarDetalle("    angulo antes: " + anguloActual);
-        Depuracion.registrarDetalle("    bounds objetivo: [" + boundsObjetivo.join(", ") + "]");
+        Depuracion.registrarDetalle("    bounds objetivo: top=" + boundsObjetivo.top + " left=" + boundsObjetivo.left);
         DepuracionGeometrica.registrarBounds("antes de rotar", obj);
 
         obj.rotationAngle = anguloActual + 180;
@@ -68,9 +65,9 @@ var RepeticionDeCuadrantes = (function() {
         Depuracion.registrarDetalle("    angulo despues: " + obj.rotationAngle);
         DepuracionGeometrica.registrarBounds("despues de rotar", obj);
 
-        var boundsDespues = obj.geometricBounds;
-        var deltaX = boundsObjetivo[1] - boundsDespues[1];
-        var deltaY = boundsObjetivo[0] - boundsDespues[0];
+        var bd = Bounds.deObjeto(obj);
+        var deltaX = boundsObjetivo.left - bd.left;
+        var deltaY = boundsObjetivo.top  - bd.top;
         Depuracion.registrarDetalle("    delta correccion post-rotacion: [" + deltaX + ", " + deltaY + "]");
         obj.move(undefined, [deltaX, deltaY]);
 
@@ -85,18 +82,19 @@ var RepeticionDeCuadrantes = (function() {
         DepuracionGeometrica.registrarElementosInternos("base", obj);
 
         var dupHorizontal = duplicarHorizontal(obj, pagina);
-        var dupVertical = duplicarVertical(obj, pagina);
-        var dupDiagonal = duplicarVertical(dupHorizontal, pagina);
-        var boundsVertical = copiarBounds(dupVertical.geometricBounds);
-        var boundsDiagonal = copiarBounds(dupDiagonal.geometricBounds);
+        var dupVertical   = duplicarVertical(obj, pagina);
+        var dupDiagonal   = duplicarVertical(dupHorizontal, pagina);
+
+        var boundsVertical = Bounds.deObjeto(dupVertical);
+        var boundsDiagonal = Bounds.deObjeto(dupDiagonal);
 
         rotarMediaVueltaConCorreccion(dupVertical, boundsVertical);
         rotarMediaVueltaConCorreccion(dupDiagonal, boundsDiagonal);
 
         return {
-            superiorDerecho: dupHorizontal,
+            superiorDerecho:  dupHorizontal,
             inferiorIzquierdo: dupVertical,
-            inferiorDerecho: dupDiagonal
+            inferiorDerecho:   dupDiagonal
         };
     }
 

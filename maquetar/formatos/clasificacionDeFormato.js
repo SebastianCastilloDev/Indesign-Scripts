@@ -46,7 +46,7 @@ var ClasificacionDeFormato = (function() {
     function clasificar(dimensiones, tolerancias) {
         return elegirCategoriaMasPequena(
             dimensiones,
-            CalculoDeMedidas.obtenerCatalogo(),
+            CatalogoDeFormatos.obtenerCatalogo(),
             normalizarTolerancias(tolerancias)
         );
     }

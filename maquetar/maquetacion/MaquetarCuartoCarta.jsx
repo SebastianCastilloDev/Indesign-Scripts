@@ -1,16 +1,4 @@
-var MaquetarDocumentoParaImpresion = (function() {
-
-    function estaEnCuadranteSuperiorIzquierdo(obj, pagina) {
-        var pBounds = pagina.bounds;
-        var centroX = (pBounds[1] + pBounds[3]) / 2;
-        var centroY = (pBounds[0] + pBounds[2]) / 2;
-        var bounds = obj.geometricBounds;
-
-        return bounds[0] >= pBounds[0] &&
-               bounds[1] >= pBounds[1] &&
-               bounds[2] <= centroY &&
-               bounds[3] <= centroX;
-    }
+var MaquetarCuartoCarta = (function() {
 
     function convertirSeleccionEnArray(seleccion) {
         var elementos = [];
@@ -59,29 +47,26 @@ var MaquetarDocumentoParaImpresion = (function() {
     function validarObjetoBase(obj, pagina) {
         var superposicion = ValidarSuperposicion.validarSuperposicionObjetoConLineaGuia(obj, pagina);
         if (superposicion !== null) {
-            alert("El elemento seleccionado está encima de la guía " + superposicion + " del centro de página.");
-            return false;
+            return "El elemento seleccionado está encima de la guía " + superposicion + " del centro de página.";
         }
 
-        if (!estaEnCuadranteSuperiorIzquierdo(obj, pagina)) {
-            alert("El elemento seleccionado debe estar contenido en el cuadrante superior izquierdo.");
-            return false;
+        if (!Bounds.estaEnCuadranteSuperiorIzquierdo(Bounds.deObjeto(obj), Bounds.dePagina(pagina))) {
+            return "El elemento seleccionado debe estar contenido en el cuadrante superior izquierdo.";
         }
 
-        return true;
+        return null;
     }
 
-    function procesarElemento(resultadoPreparacion, pagina) {
-        var obj = resultadoPreparacion.obj;
-
+    function procesarElemento(obj, pagina) {
         TrazadoDeGuias.trazarAmbosEjes(pagina);
 
-        if (!validarObjetoBase(obj, pagina)) {
+        var error = validarObjetoBase(obj, pagina);
+        if (error !== null) {
+            alert(error);
             return false;
         }
 
         var repeticiones = RepeticionDeCuadrantes.duplicarEnCuadrantes(obj, pagina);
-        desagruparSiCorresponde(resultadoPreparacion, repeticiones);
         Depuracion.registrar("Elemento duplicado: superior derecho sin rotar; cuadrantes inferiores con rotación de 180 grados.");
         return true;
     }
@@ -93,12 +78,22 @@ var MaquetarDocumentoParaImpresion = (function() {
 
         var seleccion = AdaptadorInDesign.obtenerSeleccion();
         var pagina = AdaptadorInDesign.obtenerPaginaActiva();
-        var resultadoPreparacion = prepararObjetoBase(seleccion);
+        var preparacion = prepararObjetoBase(seleccion);
 
-        Depuracion.registrar("MaquetarDocumentoParaImpresion: procesando selección como una sola pieza...");
+        Depuracion.registrar("MaquetarCuartoCarta: procesando selección como una sola pieza...");
+
+        TrazadoDeGuias.trazarAmbosEjes(pagina);
 
         try {
-            return procesarElemento(resultadoPreparacion, pagina);
+            var error = validarObjetoBase(preparacion.obj, pagina);
+            if (error !== null) {
+                alert(error);
+                return false;
+            }
+            var repeticiones = RepeticionDeCuadrantes.duplicarEnCuadrantes(preparacion.obj, pagina);
+            desagruparSiCorresponde(preparacion, repeticiones);
+            Depuracion.registrar("Elemento duplicado: superior derecho sin rotar; cuadrantes inferiores con rotación de 180 grados.");
+            return true;
         } catch (e) {
             Depuracion.registrar("  Error al procesar selección: " + e.toString());
         }
@@ -108,7 +103,7 @@ var MaquetarDocumentoParaImpresion = (function() {
 
     function ejecutar(config) {
         Depuracion.limpiar();
-        Depuracion.registrar("--- Maquetar Documento Para Impresion ---");
+        Depuracion.registrar("--- Maquetar Cuarto Carta ---");
 
         Unidades.ejecutarConUnidadesEnPuntos(function() {
             procesar(config);
@@ -122,11 +117,7 @@ var MaquetarDocumentoParaImpresion = (function() {
         ejecutar: ejecutar,
         procesar: procesar,
         procesarElemento: procesarElemento,
-        prepararObjetoBase: prepararObjetoBase,
-        desagruparSiCorresponde: desagruparSiCorresponde,
-        desagruparElementoSeguro: desagruparElementoSeguro,
-        validarObjetoBase: validarObjetoBase,
-        estaEnCuadranteSuperiorIzquierdo: estaEnCuadranteSuperiorIzquierdo
+        validarObjetoBase: validarObjetoBase
     };
 
 })();

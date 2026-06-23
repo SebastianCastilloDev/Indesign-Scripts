@@ -1,10 +1,10 @@
-// ClasificacionDeFormato depende de CalculoDeMedidas global
-global.CalculoDeMedidas = require("../maquetar/lib/formatos/calculoDeMedidas.js");
-var ClasificacionDeFormato = require("../maquetar/lib/formatos/clasificacionDeFormato.js");
+// ClasificacionDeFormato depende de CatalogoDeFormatos global
+global.CatalogoDeFormatos = require("../maquetar/formatos/catalogoDeFormatos.js");
+var ClasificacionDeFormato = require("../maquetar/formatos/clasificacionDeFormato.js");
 
-var CARTA = CalculoDeMedidas.CARTA;
-var MEDIA_CARTA = CalculoDeMedidas.MEDIA_CARTA;
-var CUARTO_CARTA = CalculoDeMedidas.CUARTO_CARTA;
+var CARTA = CatalogoDeFormatos.CARTA;
+var MEDIA_CARTA = CatalogoDeFormatos.MEDIA_CARTA;
+var CUARTO_CARTA = CatalogoDeFormatos.CUARTO_CARTA;
 
 describe("ClasificacionDeFormato", function() {
 

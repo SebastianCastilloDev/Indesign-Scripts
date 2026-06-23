@@ -2,7 +2,7 @@
 // NUCLEO PURO (cálculo de centros)
 // ====================================================================
 
-#include "lib/geometria/trazadoDeGuias.js"
+#include "trazadoDeGuias.js"
 
 // ====================================================================
 // CAPA InDesign (API-dependent)

@@ -1,23 +1,17 @@
 var ValidarSuperposicion = (function() {
 
     function validarSuperposicionObjetoConLineaGuia(obj, pagina) {
-        var bounds = obj.geometricBounds || obj.bounds || [0, 0, 0, 0];
-        var pBounds = pagina.bounds || [0, 0, 0, 0];
+        var bo = Bounds.deObjeto(obj);
+        var bp = Bounds.dePagina(pagina);
+        var cx = Bounds.centroX(bp);
+        var cy = Bounds.centroY(bp);
 
-        var centroY = (pBounds[0] + pBounds[2]) / 2;
-        var centroX = (pBounds[1] + pBounds[3]) / 2;
-
-        var top = bounds[0];
-        var bottom = bounds[2];
-        var left = bounds[1];
-        var right = bounds[3];
-
-        var sobreHorizontal = (top <= centroY && bottom >= centroY);
-        var sobreVertical = (left <= centroX && right >= centroX);
+        var sobreHorizontal = (bo.top <= cy && bo.bottom >= cy);
+        var sobreVertical   = (bo.left <= cx && bo.right >= cx);
 
         if (sobreHorizontal && sobreVertical) return "ambas";
         if (sobreHorizontal) return "horizontal";
-        if (sobreVertical) return "vertical";
+        if (sobreVertical)   return "vertical";
         return null;
     }
 

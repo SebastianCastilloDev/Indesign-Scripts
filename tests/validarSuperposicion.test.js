@@ -1,4 +1,5 @@
-var ValidarSuperposicion = require("../maquetar/lib/geometria/validarSuperposicion.js");
+global.Bounds = require("../maquetar/geometria/bounds.js");
+var ValidarSuperposicion = require("../maquetar/geometria/validarSuperposicion.js");
 
 function crearPagina(ancho, alto) {
     return { bounds: [0, 0, alto, ancho] };

@@ -2,7 +2,7 @@
 // NUCLEO PURO (resolución de enumeradores)
 // ====================================================================
 
-#include "lib/adaptadores/adaptadorInDesign.js"
+#include "adaptadorInDesign.js"
 
 // ====================================================================
 // CAPA InDesign (API-dependent)

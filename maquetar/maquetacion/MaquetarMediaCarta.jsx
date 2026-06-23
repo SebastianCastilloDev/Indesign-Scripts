@@ -1,33 +1,24 @@
 var MaquetarMediaCarta = (function() {
 
-    function estaEnMitadSuperior(obj, pagina) {
-        var pBounds = pagina.bounds;
-        var centroY = (pBounds[0] + pBounds[2]) / 2;
-        var bounds = obj.geometricBounds;
-
-        return bounds[0] >= pBounds[0] &&
-               bounds[2] <= centroY;
-    }
-
     function validarObjetoBase(obj, pagina) {
         var superposicion = ValidarSuperposicion.validarSuperposicionObjetoConLineaGuia(obj, pagina);
         if (superposicion === "horizontal" || superposicion === "ambas") {
-            alert("El elemento seleccionado está encima de la guía horizontal del centro de página.");
-            return false;
+            return "El elemento seleccionado está encima de la guía horizontal del centro de página.";
         }
 
-        if (!estaEnMitadSuperior(obj, pagina)) {
-            alert("El elemento seleccionado debe estar contenido en la mitad superior de la página.");
-            return false;
+        if (!Bounds.estaEnMitadSuperior(Bounds.deObjeto(obj), Bounds.dePagina(pagina))) {
+            return "El elemento seleccionado debe estar contenido en la mitad superior de la página.";
         }
 
-        return true;
+        return null;
     }
 
     function procesarElemento(obj, pagina) {
         TrazadoDeGuias.trazarSoloHorizontal(pagina);
 
-        if (!validarObjetoBase(obj, pagina)) {
+        var error = validarObjetoBase(obj, pagina);
+        if (error !== null) {
+            alert(error);
             return false;
         }
 
@@ -38,8 +29,7 @@ var MaquetarMediaCarta = (function() {
 
     return {
         procesarElemento: procesarElemento,
-        validarObjetoBase: validarObjetoBase,
-        estaEnMitadSuperior: estaEnMitadSuperior
+        validarObjetoBase: validarObjetoBase
     };
 
 })();

@@ -16,21 +16,22 @@ var CONFIG = {
 // MODULOS
 // ====================================================================
 
-#include "maquetar/Unidades.jsx"
-#include "maquetar/CalculoDeMedidas.jsx"
-#include "maquetar/ClasificacionDeFormato.jsx"
-#include "maquetar/lib/geometria/validarSuperposicion.js"
-#include "maquetar/AdaptadorInDesign.jsx"
-#include "maquetar/Depuracion.jsx"
-#include "maquetar/DepuracionGeometrica.jsx"
-#include "maquetar/TrazadoDeGuias.jsx"
-#include "maquetar/ValidacionDeEjecucion.jsx"
-#include "maquetar/RepeticionDeCuadrantes.jsx"
-#include "maquetar/MaquetarMediaCarta.jsx"
-#include "maquetar/maquetarDocumentoParaImpresion.jsx"
-#include "maquetar/MaquetacionPorCategoria.jsx"
-#include "maquetar/PresentacionDeResultados.jsx"
-#include "maquetar/Aplicacion.jsx"
+#include "maquetar/unidades/Unidades.jsx"
+#include "maquetar/formatos/CatalogoDeFormatos.jsx"
+#include "maquetar/formatos/ClasificacionDeFormato.jsx"
+#include "maquetar/geometria/bounds.js"
+#include "maquetar/geometria/validarSuperposicion.js"
+#include "maquetar/indesign/AdaptadorInDesign.jsx"
+#include "maquetar/depuracion/Depuracion.jsx"
+#include "maquetar/depuracion/DepuracionGeometrica.jsx"
+#include "maquetar/geometria/TrazadoDeGuias.jsx"
+#include "maquetar/aplicacion/ValidacionDeEjecucion.jsx"
+#include "maquetar/maquetacion/RepeticionDeCuadrantes.jsx"
+#include "maquetar/maquetacion/MaquetarMediaCarta.jsx"
+#include "maquetar/maquetacion/MaquetarCuartoCarta.jsx"
+#include "maquetar/maquetacion/MaquetacionPorCategoria.jsx"
+#include "maquetar/aplicacion/PresentacionDeResultados.jsx"
+#include "maquetar/aplicacion/Aplicacion.jsx"
 
 // ====================================================================
 // EJECUCION

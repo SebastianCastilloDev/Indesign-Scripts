@@ -1,4 +1,4 @@
-var AdaptadorInDesign = require("../maquetar/lib/adaptadores/adaptadorInDesign.js");
+var AdaptadorInDesign = require("../maquetar/indesign/adaptadorInDesign.js");
 
 describe("AdaptadorInDesign (enumeradores)", function() {
 
