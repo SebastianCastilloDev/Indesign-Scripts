@@ -42,8 +42,7 @@ var DepuracionGeometrica = (function() {
 
     return {
         registrarBounds: registrarBounds,
-        registrarElementosInternos: registrarElementosInternos,
-        obtenerNombreObjeto: obtenerNombreObjeto
+        registrarElementosInternos: registrarElementosInternos
     };
 
 })();

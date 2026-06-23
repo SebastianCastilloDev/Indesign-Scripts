@@ -98,11 +98,11 @@ var RepeticionDeCuadrantes = (function() {
         };
     }
 
+    // Público: solo lo que consumen otros módulos. duplicarHorizontal y
+    // rotarMediaVueltaConCorreccion son helpers internos de duplicarEnCuadrantes.
     return {
-        duplicarHorizontal: duplicarHorizontal,
         duplicarVertical: duplicarVertical,
-        duplicarEnCuadrantes: duplicarEnCuadrantes,
-        rotarMediaVueltaConCorreccion: rotarMediaVueltaConCorreccion
+        duplicarEnCuadrantes: duplicarEnCuadrantes
     };
 
 })();

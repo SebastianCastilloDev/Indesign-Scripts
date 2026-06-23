@@ -29,10 +29,6 @@ var Depuracion = (function() {
         return DETALLADA;
     }
 
-    function obtenerLineas() {
-        return LINEAS;
-    }
-
     function mostrar(forzar) {
         if (!MOSTRAR && !forzar) return;
         try {
@@ -66,8 +62,7 @@ var Depuracion = (function() {
         registrarDetalle: registrarDetalle,
         esDetallada: esDetallada,
         mostrar: mostrar,
-        mostrarError: mostrarError,
-        obtenerLineas: obtenerLineas
+        mostrarError: mostrarError
     };
 
 })();
