@@ -11,7 +11,7 @@ var MaquetacionPorCategoria = (function() {
         Depuracion.registrar("  Medidas: " + dimensiones.ancho.toFixed(1) + " x " + dimensiones.alto.toFixed(1) + " mm  →  " + (categoria || "sin categoría"));
 
         var cat = CatalogoDeFormatos;
-        Depuracion.registrar("  Catalogo — Media Carta: " + cat.MEDIA_CARTA.ancho.toFixed(1) + "x" + cat.MEDIA_CARTA.alto.toFixed(1) + "  Cuarto Carta: " + cat.CUARTO_CARTA.ancho.toFixed(1) + "x" + cat.CUARTO_CARTA.alto.toFixed(1) + " (tol ±" + tolerancias.horizontal + "mm)");
+        Depuracion.registrarDetalle("  Catalogo — Media Carta: " + cat.MEDIA_CARTA.ancho.toFixed(1) + "x" + cat.MEDIA_CARTA.alto.toFixed(1) + "  Cuarto Carta: " + cat.CUARTO_CARTA.ancho.toFixed(1) + "x" + cat.CUARTO_CARTA.alto.toFixed(1) + " (tol ±" + tolerancias.horizontal + "mm)");
 
         return {
             dimensiones: dimensiones,
@@ -44,10 +44,7 @@ var MaquetacionPorCategoria = (function() {
     }
 
     function estaFueraDePagina(obj, pagina) {
-        var bo = Bounds.deObjeto(obj);
-        var bp = Bounds.dePagina(pagina);
-        return bo.right <= bp.left || bo.left >= bp.right ||
-               bo.bottom <= bp.top || bo.top  >= bp.bottom;
+        return Bounds.estaFueraDePagina(Bounds.deObjeto(obj), Bounds.dePagina(pagina));
     }
 
     function desagruparSeguro(obj) {

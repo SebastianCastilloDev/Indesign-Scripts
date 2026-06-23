@@ -27,6 +27,15 @@ var Bounds = (function() {
                objBounds.right <= centroX(paginaBounds);
     }
 
+    // El objeto está completamente fuera de la página si no hay solapamiento
+    // en ninguno de los dos ejes (queda íntegro en el pasteboard).
+    function estaFueraDePagina(objBounds, paginaBounds) {
+        return objBounds.right <= paginaBounds.left ||
+               objBounds.left  >= paginaBounds.right ||
+               objBounds.bottom <= paginaBounds.top ||
+               objBounds.top    >= paginaBounds.bottom;
+    }
+
     return {
         deObjeto: deObjeto,
         dePagina: dePagina,
@@ -35,7 +44,8 @@ var Bounds = (function() {
         ancho: ancho,
         alto: alto,
         estaEnMitadSuperior: estaEnMitadSuperior,
-        estaEnCuadranteSuperiorIzquierdo: estaEnCuadranteSuperiorIzquierdo
+        estaEnCuadranteSuperiorIzquierdo: estaEnCuadranteSuperiorIzquierdo,
+        estaFueraDePagina: estaFueraDePagina
     };
 
 })();

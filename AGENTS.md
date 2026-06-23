@@ -98,7 +98,7 @@ Los módulos son variables globales sin declaración de dependencias, así que e
 10. `aplicacion/ValidacionDeEjecucion.jsx` → AdaptadorInDesign, Depuracion
 11. `maquetacion/RepeticionDeCuadrantes.jsx` → Bounds, Depuracion, DepuracionGeometrica
 12. `maquetacion/MaquetarMediaCarta.jsx` → Bounds, ValidarSuperposicion, TrazadoDeGuias, RepeticionDeCuadrantes, Depuracion
-13. `maquetacion/MaquetarCuartoCarta.jsx` → Bounds, ValidarSuperposicion, TrazadoDeGuias, RepeticionDeCuadrantes, AdaptadorInDesign, ValidacionDeEjecucion, Unidades, Depuracion
+13. `maquetacion/MaquetarCuartoCarta.jsx` → Bounds, ValidarSuperposicion, TrazadoDeGuias, RepeticionDeCuadrantes, Depuracion
 14. `maquetacion/MaquetacionPorCategoria.jsx` → CatalogoDeFormatos, ClasificacionDeFormato, MaquetarMediaCarta, MaquetarCuartoCarta, AdaptadorInDesign, Depuracion
 15. `aplicacion/PresentacionDeResultados.jsx` → Depuracion
 16. `aplicacion/Aplicacion.jsx` → todos los anteriores
@@ -117,7 +117,7 @@ Si un `#include` falla (p. ej. en InDesign 2025 o anterior que no lo soporte des
 - **`CatalogoDeFormatos.jsx` / `ClasificacionDeFormato.jsx`** — wrappers delgados (`#include` del `.js`).
 
 ### geometria/
-- **`bounds.js`** — primitivas de geometría puras. `deObjeto(obj)` y `dePagina(pagina)` convierten arrays de bounds a `{top, left, bottom, right}`. Helpers: `centroX`, `centroY`, `ancho`, `alto`, `estaEnMitadSuperior`, `estaEnCuadranteSuperiorIzquierdo`. Todos los módulos que necesiten trabajar con coordenadas usan este módulo — nunca índices mágicos `[0]`/`[1]`/`[2]`/`[3]` directamente.
+- **`bounds.js`** — primitivas de geometría puras. `deObjeto(obj)` y `dePagina(pagina)` convierten arrays de bounds a `{top, left, bottom, right}`. Helpers: `centroX`, `centroY`, `ancho`, `alto`, `estaEnMitadSuperior`, `estaEnCuadranteSuperiorIzquierdo`, `estaFueraDePagina`. Todos los módulos que necesiten trabajar con coordenadas usan este módulo — nunca índices mágicos `[0]`/`[1]`/`[2]`/`[3]` directamente.
 - **`validarSuperposicion.js`** — `validarSuperposicionObjetoConLineaGuia(obj, pagina)`: ¿el elemento cruza el centro de página donde se trazaría la guía? Retorna `"horizontal"`, `"vertical"`, `"ambas"` o `null`. Usa `Bounds`.
 - **`trazadoDeGuias.js`** — cálculo puro de centros via `Bounds`: `calcularCentroHorizontal(pagina)`, `calcularCentroVertical(pagina)`.
 - **`TrazadoDeGuias.jsx`** — agrega la capa InDesign: `trazarSoloHorizontal()` y `trazarAmbosEjes()` crean las guías vía `AdaptadorInDesign`.
@@ -128,9 +128,9 @@ Si un `#include` falla (p. ej. en InDesign 2025 o anterior que no lo soporte des
 
 ### maquetacion/
 - **`RepeticionDeCuadrantes.jsx`** — duplicación geométrica: `duplicarHorizontal`, `duplicarVertical`, `duplicarEnCuadrantes` (4-up) y `rotarMediaVueltaConCorreccion` (180° + corrección de posición).
-- **`MaquetarMediaCarta.jsx`** — caso de uso Media Carta: traza guía horizontal, valida que el elemento esté en la mitad superior y lo duplica a la mitad inferior sin rotar.
-- **`MaquetarCuartoCarta.jsx`** — caso de uso Cuarto Carta: traza ambos ejes, valida que el elemento esté en el cuadrante superior izquierdo y lo replica en los 4 cuadrantes (inferiores rotados 180°). Soporta agrupar varios elementos como una sola pieza.
-- **`MaquetacionPorCategoria.jsx`** — despachador: mide y clasifica cada elemento seleccionado y lo enruta al handler correspondiente via un **registro `MANEJADORES`** (`categoría → función`). Para agregar un nuevo formato basta añadir su handler y una línea en el registro — sin tocar el resto del despachador. Cada elemento se procesa con try-catch individual.
+- **`MaquetarMediaCarta.jsx`** — caso de uso Media Carta: valida que el elemento esté en la mitad superior, **luego** traza la guía horizontal y lo duplica a la mitad inferior sin rotar. Devuelve `[copia]` o `null` si la validación falla. API pública: `procesarElemento`, `validarObjetoBase`.
+- **`MaquetarCuartoCarta.jsx`** — caso de uso Cuarto Carta: valida que el elemento esté en el cuadrante superior izquierdo, **luego** traza ambos ejes y lo replica en los 4 cuadrantes (inferiores rotados 180°). Devuelve el array de copias o `null`. API pública simétrica con Media Carta: `procesarElemento`, `validarObjetoBase`. *(Validar antes de trazar evita dejar guías huérfanas si la posición es inválida.)*
+- **`MaquetacionPorCategoria.jsx`** — despachador. Para selección única mide/clasifica el elemento directo; para selección múltiple lo **agrupa temporalmente**, mide el bounding box combinado, clasifica y, al terminar, **desagrupa el grupo y todas las copias** para no penalizar el rendimiento de impresión. Valida que la selección esté dentro de la página antes de procesar. Enruta al handler via el **registro `MANEJADORES`** (`categoría → función`). Cada caso se procesa con try-catch.
 - **Para agregar un nuevo formato**: (1) crear `MaquetarNuevoFormato.jsx` en `maquetacion/`, (2) agregar el tamaño en `catalogoDeFormatos.js`, (3) registrar `MANEJADORES[CatalogoDeFormatos.NUEVO.nombre] = MaquetarNuevoFormato.procesarElemento` en `MaquetacionPorCategoria`, (4) incluir el `.jsx` en `maquetar.jsx` antes del despachador.
 
 ### depuracion/

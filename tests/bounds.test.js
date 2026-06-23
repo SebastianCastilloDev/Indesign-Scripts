@@ -115,4 +115,43 @@ describe("Bounds", function() {
         });
     });
 
+    describe("estaFueraDePagina", function() {
+        var bp = { top: 0, left: 0, bottom: 200, right: 200 };
+
+        it("devuelve false cuando el objeto está dentro de la página", function() {
+            var bo = { top: 50, left: 50, bottom: 150, right: 150 };
+            expect(Bounds.estaFueraDePagina(bo, bp)).toBe(false);
+        });
+
+        it("devuelve false cuando el objeto solapa parcialmente un borde", function() {
+            var bo = { top: 50, left: 150, bottom: 150, right: 250 };
+            expect(Bounds.estaFueraDePagina(bo, bp)).toBe(false);
+        });
+
+        it("devuelve true cuando el objeto está completamente a la derecha", function() {
+            var bo = { top: 50, left: 210, bottom: 150, right: 300 };
+            expect(Bounds.estaFueraDePagina(bo, bp)).toBe(true);
+        });
+
+        it("devuelve true cuando el objeto está completamente a la izquierda", function() {
+            var bo = { top: 50, left: -100, bottom: 150, right: -10 };
+            expect(Bounds.estaFueraDePagina(bo, bp)).toBe(true);
+        });
+
+        it("devuelve true cuando el objeto está completamente arriba", function() {
+            var bo = { top: -100, left: 50, bottom: -10, right: 150 };
+            expect(Bounds.estaFueraDePagina(bo, bp)).toBe(true);
+        });
+
+        it("devuelve true cuando el objeto está completamente abajo", function() {
+            var bo = { top: 210, left: 50, bottom: 300, right: 150 };
+            expect(Bounds.estaFueraDePagina(bo, bp)).toBe(true);
+        });
+
+        it("devuelve true cuando el objeto solo toca el borde izquierdo (sin solapar)", function() {
+            var bo = { top: 50, left: -50, bottom: 150, right: 0 };
+            expect(Bounds.estaFueraDePagina(bo, bp)).toBe(true);
+        });
+    });
+
 });

@@ -14,14 +14,13 @@ var MaquetarMediaCarta = (function() {
     }
 
     function procesarElemento(obj, pagina) {
-        TrazadoDeGuias.trazarSoloHorizontal(pagina);
-
         var error = validarObjetoBase(obj, pagina);
         if (error !== null) {
             alert(error);
             return null;
         }
 
+        TrazadoDeGuias.trazarSoloHorizontal(pagina);
         var copia = RepeticionDeCuadrantes.duplicarVertical(obj, pagina);
         Depuracion.registrar("Elemento Media Carta duplicado hacia la mitad inferior sin rotación.");
         return [copia];
