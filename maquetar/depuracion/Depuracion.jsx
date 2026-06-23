@@ -4,9 +4,12 @@ var Depuracion = (function() {
     var LINEA_PUNTO = 8;
     var CANTIDAD_LINEAS_MOSTRAR = 1000;
     var DETALLADA = false;
+    var MOSTRAR = false;
 
     function configurar(config) {
-        DETALLADA = !!(config && config.depuracion && config.depuracion.detallada);
+        var dep = config && config.depuracion;
+        DETALLADA = !!(dep && dep.detallada);
+        MOSTRAR   = !!(dep && dep.mostrar);
     }
 
     function limpiar() {
@@ -30,7 +33,8 @@ var Depuracion = (function() {
         return LINEAS;
     }
 
-    function mostrar() {
+    function mostrar(forzar) {
+        if (!MOSTRAR && !forzar) return;
         try {
             if (!AdaptadorInDesign.hayDocumentoAbierto()) return;
             var pagina = AdaptadorInDesign.obtenerPrimeraPagina();
@@ -52,7 +56,7 @@ var Depuracion = (function() {
 
     function mostrarError(mensaje) {
         registrar("ERROR: " + mensaje);
-        mostrar();
+        mostrar(true);
     }
 
     return {

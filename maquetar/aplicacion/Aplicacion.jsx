@@ -31,8 +31,7 @@ var Aplicacion = (function() {
             ejecutarFlujoPrincipal(config);
             finalizarDepuracion();
         } catch (e) {
-            Depuracion.registrar("Error fatal: " + e.toString());
-            Depuracion.mostrar();
+            Depuracion.mostrarError("Error fatal: " + e.toString());
         }
     }
 

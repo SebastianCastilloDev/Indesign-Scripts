@@ -8,7 +8,8 @@ var CONFIG = {
         vertical: 2
     },
     depuracion: {
-        detallada: true
+        detallada: false,  // true → registra detalles geométricos internos
+        mostrar: false     // true → crea el recuadro de log al finalizar
     }
 };
 
