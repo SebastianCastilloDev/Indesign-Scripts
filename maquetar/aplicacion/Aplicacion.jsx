@@ -7,17 +7,20 @@ var Aplicacion = (function() {
         Depuracion.registrar("Fecha: " + new Date().toLocaleDateString());
     }
 
-    function configurarProcesos(config) {
-        MaquetacionPorCategoria.procesar(config);
-    }
-
     function ejecutarFlujoPrincipal(config) {
         if (!ValidacionDeEjecucion.validar()) {
             return;
         }
 
+        var papel = SelectorDePapel.elegir(config.papelPorDefecto);
+        if (papel === null) {
+            Depuracion.registrar("Operación cancelada por el usuario.");
+            return;
+        }
+        Depuracion.registrar("Papel elegido: " + papel.nombre);
+
         Unidades.ejecutarConUnidadesEnPuntos(function() {
-            configurarProcesos(config);
+            MaquetacionPorCategoria.procesar(config, papel);
         });
     }
 

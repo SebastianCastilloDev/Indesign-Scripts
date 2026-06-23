@@ -15,16 +15,24 @@ var Bounds = (function() {
     function ancho(b) { return Math.abs(b.right - b.left); }
     function alto(b) { return Math.abs(b.bottom - b.top); }
 
-    function estaEnMitadSuperior(objBounds, paginaBounds) {
+    // ejeY (opcional, en la misma unidad que los bounds): línea de plegado.
+    // Si se omite, usa el centro de la página (comportamiento Carta media).
+    function estaEnMitadSuperior(objBounds, paginaBounds, ejeY) {
+        var eje = (ejeY === undefined) ? centroY(paginaBounds) : ejeY;
         return objBounds.top >= paginaBounds.top &&
-               objBounds.bottom <= centroY(paginaBounds);
+               objBounds.bottom <= eje;
     }
 
-    function estaEnCuadranteSuperiorIzquierdo(objBounds, paginaBounds) {
+    // ejeX/ejeY (opcionales): líneas de plegado. Si se omiten, usan el centro
+    // de la página. El eje vertical (ejeX) coincide con el centro en ambos
+    // papeles; el horizontal (ejeY) cambia en Tamaño 14 (137 en vez de 139.7).
+    function estaEnCuadranteSuperiorIzquierdo(objBounds, paginaBounds, ejeX, ejeY) {
+        var ex = (ejeX === undefined) ? centroX(paginaBounds) : ejeX;
+        var ey = (ejeY === undefined) ? centroY(paginaBounds) : ejeY;
         return objBounds.top >= paginaBounds.top &&
                objBounds.left >= paginaBounds.left &&
-               objBounds.bottom <= centroY(paginaBounds) &&
-               objBounds.right <= centroX(paginaBounds);
+               objBounds.bottom <= ey &&
+               objBounds.right <= ex;
     }
 
     // El objeto está completamente fuera de la página si no hay solapamiento

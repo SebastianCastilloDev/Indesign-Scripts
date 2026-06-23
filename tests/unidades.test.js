@@ -55,4 +55,21 @@ describe("Unidades", function() {
 
     });
 
+    describe("convertirMilimetrosAPuntos", function() {
+
+        it("debe convertir 0 mm a 0 puntos", function() {
+            expect(Unidades.convertirMilimetrosAPuntos(0)).toBe(0);
+        });
+
+        it("debe convertir 25.4 mm a ~72 puntos (1 pulgada)", function() {
+            expect(Unidades.convertirMilimetrosAPuntos(25.4)).toBeCloseTo(72, 5);
+        });
+
+        it("debe ser el inverso de convertirPuntosAMilimetros", function() {
+            var pts = Unidades.convertirMilimetrosAPuntos(137);
+            expect(Unidades.convertirPuntosAMilimetros(pts)).toBeCloseTo(137, 6);
+        });
+
+    });
+
 });

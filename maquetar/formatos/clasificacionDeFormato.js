@@ -43,10 +43,14 @@ var ClasificacionDeFormato = (function() {
         };
     }
 
-    function clasificar(dimensiones, tolerancias) {
+    // catalogo (opcional): lista de variantes contra las que clasificar. Si se
+    // omite, usa el catálogo global (compatibilidad). El flujo nuevo le pasa el
+    // catálogo del papel elegido: Papeles.TAMANO_*.obtenerCatalogo().
+    function clasificar(dimensiones, tolerancias, catalogo) {
+        var cat = catalogo || CatalogoDeFormatos.obtenerCatalogo();
         return elegirCategoriaMasPequena(
             dimensiones,
-            CatalogoDeFormatos.obtenerCatalogo(),
+            cat,
             normalizarTolerancias(tolerancias)
         );
     }

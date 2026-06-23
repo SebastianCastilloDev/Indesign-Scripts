@@ -18,9 +18,16 @@ var Unidades = (function() {
         return convertirAMilimetros(valor, MeasurementUnits.points);
     }
 
+    // Inverso: mm → puntos. Necesario para posicionar guías en una medida
+    // absoluta en mm (p. ej. el eje de plegado del Tamaño 14 en 137 mm).
+    function convertirMilimetrosAPuntos(milimetros) {
+        return milimetros / FACTOR_A_MM[MeasurementUnits.points];
+    }
+
     return {
         convertirAMilimetros: convertirAMilimetros,
         convertirPuntosAMilimetros: convertirPuntosAMilimetros,
+        convertirMilimetrosAPuntos: convertirMilimetrosAPuntos,
         FACTOR_A_MM: FACTOR_A_MM
     };
 

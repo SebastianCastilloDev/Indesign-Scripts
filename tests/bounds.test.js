@@ -84,6 +84,17 @@ describe("Bounds", function() {
             var bo = { top: 110, left: 0, bottom: 190, right: 50 };
             expect(Bounds.estaEnMitadSuperior(bo, bp)).toBe(false);
         });
+
+        it("usa el ejeY explícito en vez del centro cuando se pasa", function() {
+            // eje en 80 (más arriba que el centro 100)
+            var bo = { top: 0, left: 0, bottom: 80, right: 50 };
+            expect(Bounds.estaEnMitadSuperior(bo, bp, 80)).toBe(true);
+        });
+
+        it("devuelve false si el objeto cruza el ejeY explícito", function() {
+            var bo = { top: 0, left: 0, bottom: 90, right: 50 };
+            expect(Bounds.estaEnMitadSuperior(bo, bp, 80)).toBe(false);
+        });
     });
 
     describe("estaEnCuadranteSuperiorIzquierdo", function() {
@@ -112,6 +123,23 @@ describe("Bounds", function() {
         it("devuelve false cuando el objeto está en el cuadrante inferior derecho", function() {
             var bo = { top: 110, left: 110, bottom: 190, right: 190 };
             expect(Bounds.estaEnCuadranteSuperiorIzquierdo(bo, bp)).toBe(false);
+        });
+
+        it("usa ejeY explícito (más arriba que el centro) cuando se pasa", function() {
+            var bo = { top: 0, left: 0, bottom: 80, right: 90 };
+            expect(Bounds.estaEnCuadranteSuperiorIzquierdo(bo, bp, undefined, 80)).toBe(true);
+        });
+
+        it("devuelve false si el objeto cruza el ejeY explícito", function() {
+            var bo = { top: 0, left: 0, bottom: 90, right: 90 };
+            expect(Bounds.estaEnCuadranteSuperiorIzquierdo(bo, bp, undefined, 80)).toBe(false);
+        });
+
+        it("usa ejeX explícito cuando se pasa", function() {
+            var dentro = { top: 0, left: 0, bottom: 90, right: 70 };
+            var cruza  = { top: 0, left: 0, bottom: 90, right: 90 };
+            expect(Bounds.estaEnCuadranteSuperiorIzquierdo(dentro, bp, 80, undefined)).toBe(true);
+            expect(Bounds.estaEnCuadranteSuperiorIzquierdo(cruza, bp, 80, undefined)).toBe(false);
         });
     });
 

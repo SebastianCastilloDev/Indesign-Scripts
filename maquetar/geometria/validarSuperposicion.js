@@ -1,10 +1,12 @@
 var ValidarSuperposicion = (function() {
 
-    function validarSuperposicionObjetoConLineaGuia(obj, pagina) {
+    // ejeX/ejeY (opcionales, en la unidad de los bounds): líneas de plegado.
+    // Si se omiten, usan el centro de página (comportamiento Carta).
+    function validarSuperposicionObjetoConLineaGuia(obj, pagina, ejeX, ejeY) {
         var bo = Bounds.deObjeto(obj);
         var bp = Bounds.dePagina(pagina);
-        var cx = Bounds.centroX(bp);
-        var cy = Bounds.centroY(bp);
+        var cx = (ejeX === undefined) ? Bounds.centroX(bp) : ejeX;
+        var cy = (ejeY === undefined) ? Bounds.centroY(bp) : ejeY;
 
         var sobreHorizontal = (bo.top <= cy && bo.bottom >= cy);
         var sobreVertical   = (bo.left <= cx && bo.right >= cx);

@@ -8,23 +8,31 @@
 // CAPA InDesign (API-dependent)
 // ====================================================================
 
-TrazadoDeGuias.trazarHorizontal = function(pagina) {
-    var centroY = TrazadoDeGuias.calcularCentroVertical(pagina);
-    return AdaptadorInDesign.crearGuiaHorizontal(pagina, centroY);
-};
-
+// El eje vertical (fold de cuarto) siempre es el centro de página: mismo ancho
+// en ambos papeles. El horizontal ya no se traza al centro — va por mm (eje de
+// plegado del papel) vía trazarGuiaHorizontalEnMm.
 TrazadoDeGuias.trazarVertical = function(pagina) {
     var centroX = TrazadoDeGuias.calcularCentroHorizontal(pagina);
     return AdaptadorInDesign.crearGuiaVertical(pagina, centroX);
 };
 
-TrazadoDeGuias.trazarSoloHorizontal = function(pagina) {
-    Depuracion.registrar("Trazando guía horizontal en centro de página");
-    TrazadoDeGuias.trazarHorizontal(pagina);
+// Y (en puntos) de una posición a `mm` del borde superior de la página.
+TrazadoDeGuias.posicionHorizontalEnPuntos = function(pagina, mm) {
+    return Bounds.dePagina(pagina).top + Unidades.convertirMilimetrosAPuntos(mm);
 };
 
-TrazadoDeGuias.trazarAmbosEjes = function(pagina) {
-    Depuracion.registrar("Trazando guías horizontal y vertical en centro de página");
-    TrazadoDeGuias.trazarHorizontal(pagina);
-    TrazadoDeGuias.trazarVertical(pagina);
+// Traza una guía horizontal a una distancia absoluta en mm del borde superior.
+// Sirve para el eje de plegado (137) y para la guía de verificación (274).
+TrazadoDeGuias.trazarGuiaHorizontalEnMm = function(pagina, mm) {
+    var y = TrazadoDeGuias.posicionHorizontalEnPuntos(pagina, mm);
+    Depuracion.registrar("Trazando guía horizontal en " + mm + " mm");
+    return AdaptadorInDesign.crearGuiaHorizontal(pagina, y);
+};
+
+// Dibuja las guías de verificación (borde de corte real) que define el papel.
+// Tamaño 14 → una guía en 274 mm; Tamaño Carta → ninguna.
+TrazadoDeGuias.trazarGuiasDeVerificacion = function(pagina, papel) {
+    for (var i = 0; i < papel.verificacionMm.length; i++) {
+        TrazadoDeGuias.trazarGuiaHorizontalEnMm(pagina, papel.verificacionMm[i]);
+    }
 };

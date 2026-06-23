@@ -37,14 +37,16 @@ var RepeticionDeCuadrantes = (function() {
         return dup;
     }
 
-    function duplicarVertical(obj, pagina) {
+    // ejeY (opcional, en puntos): línea de plegado horizontal sobre la que se
+    // refleja la copia. Si se omite, usa el centro de la página (Carta media).
+    function duplicarVertical(obj, pagina, ejeY) {
         var bp = Bounds.dePagina(pagina);
         var bo = Bounds.deObjeto(obj);
-        var cy = Bounds.centroY(bp);
+        var cy = (ejeY === undefined) ? Bounds.centroY(bp) : ejeY;
         var nuevoTop = 2 * cy - bo.bottom;
         var deltaY = nuevoTop - bo.top;
 
-        registrarDuplicacion("duplicarVertical", pagina, obj, "centroY", cy, "nuevoTop", nuevoTop, "deltaY", deltaY);
+        registrarDuplicacion("duplicarVertical", pagina, obj, "ejeY", cy, "nuevoTop", nuevoTop, "deltaY", deltaY);
 
         var dup = obj.duplicate();
         dup.move(undefined, [0, deltaY]);
@@ -76,14 +78,17 @@ var RepeticionDeCuadrantes = (function() {
         return obj;
     }
 
-    function duplicarEnCuadrantes(obj, pagina) {
+    // ejeY (opcional, en puntos): eje de plegado horizontal. El vertical siempre
+    // es el centro de página (mismo ancho en ambos papeles). En Tamaño 14 el
+    // ejeY es 137; si se omite, usa el centro (cuarto Carta).
+    function duplicarEnCuadrantes(obj, pagina, ejeY) {
         Depuracion.registrarDetalle("  DEBUG objeto base antes de duplicar:");
         DepuracionGeometrica.registrarBounds("base", obj);
         DepuracionGeometrica.registrarElementosInternos("base", obj);
 
         var dupHorizontal = duplicarHorizontal(obj, pagina);
-        var dupVertical   = duplicarVertical(obj, pagina);
-        var dupDiagonal   = duplicarVertical(dupHorizontal, pagina);
+        var dupVertical   = duplicarVertical(obj, pagina, ejeY);
+        var dupDiagonal   = duplicarVertical(dupHorizontal, pagina, ejeY);
 
         var boundsVertical = Bounds.deObjeto(dupVertical);
         var boundsDiagonal = Bounds.deObjeto(dupDiagonal);

@@ -56,6 +56,17 @@ describe("ValidarSuperposicion", function() {
             expect(ValidarSuperposicion.validarSuperposicionObjetoConLineaGuia(obj, pagina)).toBeNull();
         });
 
+        it("usa el ejeY explícito en vez del centro de página", function() {
+            // ejeY = 150 (más arriba que el centro 300)
+            var obj = crearObjeto(100, 0, 200, 100); // cruza Y=150, no X=200
+            expect(ValidarSuperposicion.validarSuperposicionObjetoConLineaGuia(obj, pagina, undefined, 150)).toBe("horizontal");
+        });
+
+        it("con ejeY explícito, un objeto que no lo cruza da null", function() {
+            var obj = crearObjeto(0, 0, 100, 100); // bottom 100 < ejeY 150
+            expect(ValidarSuperposicion.validarSuperposicionObjetoConLineaGuia(obj, pagina, undefined, 150)).toBeNull();
+        });
+
     });
 
 });
