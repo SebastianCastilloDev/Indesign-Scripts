@@ -18,23 +18,27 @@ JavaScript/
       unidades.js                 puro: conversión de unidades a mm
       Unidades.jsx                adaptador: viewPreferences + ejecutarConUnidadesEnPuntos
     formatos/
-      catalogoDeFormatos.js       puro: catálogo de tamaños de papel
-      clasificacionDeFormato.js   puro: clasifica dimensiones → categoría
+      catalogoDeFormatos.js       puro: catálogo legacy (default del clasificador)
+      clasificacionDeFormato.js   puro: clasifica dimensiones → variante (completo/media/cuarto)
+      papeles.js                  puro: papeles (Tamaño Carta / Tamaño 14) + ejes + catálogo derivado
       CatalogoDeFormatos.jsx      wrapper
       ClasificacionDeFormato.jsx  wrapper
     geometria/
-      bounds.js                   puro: primitivas de bounds (top/left/bottom/right, centros, zonas)
-      validarSuperposicion.js     puro: ¿el elemento cruza el centro de página?
+      bounds.js                   puro: primitivas de bounds (centros, zonas, ejes de plegado)
+      validarSuperposicion.js     puro: ¿el elemento cruza el eje de plegado?
       trazadoDeGuias.js           puro: cálculo de centros de página
-      TrazadoDeGuias.jsx          adaptador: crea las guías en InDesign
+      TrazadoDeGuias.jsx          adaptador: crea guías (centro o en mm absolutos)
     indesign/
       adaptadorInDesign.js        puro: resolución de FourCharCodes de orientación
       AdaptadorInDesign.jsx       adaptador: toda la API de InDesign (selección, bounds, guías, grupos…)
     maquetacion/
-      RepeticionDeCuadrantes.jsx  duplicación/rotación geométrica entre cuadrantes
-      MaquetarMediaCarta.jsx      caso de uso: imposición Media Carta (duplica a la mitad inferior)
-      MaquetarCuartoCarta.jsx     caso de uso: imposición Cuarto Carta (4 cuadrantes con rotación)
-      MaquetacionPorCategoria.jsx despacha cada elemento al caso de uso según su categoría
+      RepeticionDeCuadrantes.jsx  duplicación/rotación geométrica (eje de plegado parametrizable)
+      MaquetarCompleto.jsx        variante 1-up: solo guías de verificación (sin duplicar)
+      MaquetarMedia.jsx           variante 2-up: duplica a la mitad inferior
+      MaquetarCuarto.jsx          variante 4-up: 4 cuadrantes con rotación 180°
+      MaquetacionPorCategoria.jsx despacha la selección a la variante según su tamaño
+    ui/
+      SelectorDePapel.jsx         modal ScriptUI: elige el papel (Tamaño 14 / Carta)
     depuracion/
       Depuracion.jsx              log a un text frame (sin alert para flujo normal)
       DepuracionGeometrica.jsx    log detallado de bounds/rotaciones (modo detallado)
@@ -89,19 +93,22 @@ Los módulos son variables globales sin declaración de dependencias, así que e
 1. `unidades/Unidades.jsx` — sin dependencias
 2. `formatos/CatalogoDeFormatos.jsx` — sin dependencias
 3. `formatos/ClasificacionDeFormato.jsx` → CatalogoDeFormatos
-4. `geometria/bounds.js` — sin dependencias
-5. `geometria/validarSuperposicion.js` → Bounds
-6. `indesign/AdaptadorInDesign.jsx` → Unidades
-7. `depuracion/Depuracion.jsx` → AdaptadorInDesign
-8. `depuracion/DepuracionGeometrica.jsx` → Depuracion, Bounds
-9. `geometria/TrazadoDeGuias.jsx` → AdaptadorInDesign, Depuracion, Bounds
-10. `aplicacion/ValidacionDeEjecucion.jsx` → AdaptadorInDesign, Depuracion
-11. `maquetacion/RepeticionDeCuadrantes.jsx` → Bounds, Depuracion, DepuracionGeometrica
-12. `maquetacion/MaquetarMediaCarta.jsx` → Bounds, ValidarSuperposicion, TrazadoDeGuias, RepeticionDeCuadrantes, Depuracion
-13. `maquetacion/MaquetarCuartoCarta.jsx` → Bounds, ValidarSuperposicion, TrazadoDeGuias, RepeticionDeCuadrantes, Depuracion
-14. `maquetacion/MaquetacionPorCategoria.jsx` → CatalogoDeFormatos, ClasificacionDeFormato, MaquetarMediaCarta, MaquetarCuartoCarta, AdaptadorInDesign, Depuracion
-15. `aplicacion/PresentacionDeResultados.jsx` → Depuracion
-16. `aplicacion/Aplicacion.jsx` → todos los anteriores
+4. `formatos/papeles.js` — sin dependencias
+5. `geometria/bounds.js` — sin dependencias
+6. `geometria/validarSuperposicion.js` → Bounds
+7. `indesign/AdaptadorInDesign.jsx` → Unidades
+8. `depuracion/Depuracion.jsx` → AdaptadorInDesign
+9. `depuracion/DepuracionGeometrica.jsx` → Depuracion, Bounds
+10. `geometria/TrazadoDeGuias.jsx` → AdaptadorInDesign, Depuracion, Bounds, Unidades
+11. `aplicacion/ValidacionDeEjecucion.jsx` → AdaptadorInDesign, Depuracion
+12. `maquetacion/RepeticionDeCuadrantes.jsx` → Bounds, Depuracion, DepuracionGeometrica
+13. `maquetacion/MaquetarCompleto.jsx` → TrazadoDeGuias, Depuracion
+14. `maquetacion/MaquetarMedia.jsx` → Bounds, ValidarSuperposicion, TrazadoDeGuias, RepeticionDeCuadrantes, Depuracion
+15. `maquetacion/MaquetarCuarto.jsx` → Bounds, ValidarSuperposicion, TrazadoDeGuias, RepeticionDeCuadrantes, Depuracion
+16. `maquetacion/MaquetacionPorCategoria.jsx` → Papeles, ClasificacionDeFormato, MaquetarCompleto/Media/Cuarto, AdaptadorInDesign, Bounds, Depuracion
+17. `ui/SelectorDePapel.jsx` → Papeles
+18. `aplicacion/PresentacionDeResultados.jsx` → Depuracion
+19. `aplicacion/Aplicacion.jsx` → todos los anteriores (incl. SelectorDePapel)
 
 Si un `#include` falla (p. ej. en InDesign 2025 o anterior que no lo soporte desde el panel Scripts), concatenar manualmente el contenido de los módulos directamente en el entry point.
 
@@ -112,35 +119,41 @@ Si un `#include` falla (p. ej. en InDesign 2025 o anterior que no lo soporte des
 - **`Unidades.jsx`** — agrega la capa InDesign: lectura de `viewPreferences` y forzado temporal de reglas a puntos con `ejecutarConUnidadesEnPuntos()` (guarda/restaura en `finally`).
 
 ### formatos/
-- **`catalogoDeFormatos.js`** — catálogo de tamaños: **Carta** (215.9×279.4 mm), **Media Carta** (mitad del alto de Carta × ancho de Carta), **Cuarto Carta** (media anchura × media altura). Expone `obtenerCatalogo()`.
-- **`clasificacionDeFormato.js`** — recibe dimensiones en mm + tolerancias, compara contra el catálogo (directo y rotado) y retorna el nombre de la categoría de menor área que cabe, o `null`. Depende del global `CatalogoDeFormatos`.
-- **`CatalogoDeFormatos.jsx` / `ClasificacionDeFormato.jsx`** — wrappers delgados (`#include` del `.js`).
+- **`papeles.js`** — define los dos **papeles de impresión**: **Tamaño Carta** (alto 279.4) y **Tamaño 14** (alto 274, mismo ancho 215.9). Cada papel deriva de su `alto`: ejes de plegado (`ejeHorizontalMm` = alto/2, `ejeVerticalMm` = ancho/2), guías de verificación (`[274]` en Tamaño 14, `[]` en Carta) y `obtenerCatalogo()` con las variantes completo/media/cuarto. Expone `VARIANTE`, `TAMANO_CARTA`, `TAMANO_14`, `porNombre()`. **El papel se diseña siempre sobre hoja Carta**; Tamaño 14 solo cambia el formato real, no la hoja de InDesign.
+- **`catalogoDeFormatos.js`** — catálogo legacy (Carta/Media/Cuarto Carta); sigue siendo el **default** del clasificador cuando no se le pasa un catálogo. Expone `obtenerCatalogo()`.
+- **`clasificacionDeFormato.js`** — `clasificar(dimensiones, tolerancias, catalogo?)`: compara (directo y rotado) y retorna el nombre de menor área que cabe, o `null`. Con el catálogo de un papel devuelve la **variante** (`completo`/`media`/`cuarto`); sin catálogo usa el global `CatalogoDeFormatos`.
+- **`CatalogoDeFormatos.jsx` / `ClasificacionDeFormato.jsx`** — wrappers delgados (`#include` del `.js`). `papeles.js` se incluye directo (puro, sin capa InDesign).
 
 ### geometria/
-- **`bounds.js`** — primitivas de geometría puras. `deObjeto(obj)` y `dePagina(pagina)` convierten arrays de bounds a `{top, left, bottom, right}`. Helpers: `centroX`, `centroY`, `ancho`, `alto`, `estaEnMitadSuperior`, `estaEnCuadranteSuperiorIzquierdo`, `estaFueraDePagina`. Todos los módulos que necesiten trabajar con coordenadas usan este módulo — nunca índices mágicos `[0]`/`[1]`/`[2]`/`[3]` directamente.
-- **`validarSuperposicion.js`** — `validarSuperposicionObjetoConLineaGuia(obj, pagina)`: ¿el elemento cruza el centro de página donde se trazaría la guía? Retorna `"horizontal"`, `"vertical"`, `"ambas"` o `null`. Usa `Bounds`.
+- **`bounds.js`** — primitivas de geometría puras. `deObjeto(obj)` y `dePagina(pagina)` convierten arrays de bounds a `{top, left, bottom, right}`. Helpers: `centroX`, `centroY`, `ancho`, `alto`, `estaFueraDePagina`, y los que aceptan **eje de plegado opcional** (en puntos, default = centro): `estaEnMitadSuperior(obj, pag, ejeY?)`, `estaEnCuadranteSuperiorIzquierdo(obj, pag, ejeX?, ejeY?)`. Nunca índices mágicos `[0]`/`[1]`/`[2]`/`[3]` directamente.
+- **`validarSuperposicion.js`** — `validarSuperposicionObjetoConLineaGuia(obj, pagina, ejeX?, ejeY?)`: ¿el elemento cruza la línea de plegado? Ejes opcionales (default = centro). Retorna `"horizontal"`, `"vertical"`, `"ambas"` o `null`. Usa `Bounds`.
 - **`trazadoDeGuias.js`** — cálculo puro de centros via `Bounds`: `calcularCentroHorizontal(pagina)`, `calcularCentroVertical(pagina)`.
-- **`TrazadoDeGuias.jsx`** — agrega la capa InDesign: `trazarSoloHorizontal()` y `trazarAmbosEjes()` crean las guías vía `AdaptadorInDesign`.
+- **`TrazadoDeGuias.jsx`** — capa InDesign. Eje vertical al centro: `trazarVertical()`. Eje horizontal por medida absoluta en mm desde el borde superior: `posicionHorizontalEnPuntos(pagina, mm)`, `trazarGuiaHorizontalEnMm(pagina, mm)` y `trazarGuiasDeVerificacion(pagina, papel)`. Usa `Unidades.convertirMilimetrosAPuntos`.
 
 ### indesign/
 - **`adaptadorInDesign.js`** — resolución de FourCharCodes de orientación con fallback progresivo: `obtenerOrientacionHorizontal()`, `obtenerOrientacionVertical()`.
 - **`AdaptadorInDesign.jsx`** — capa de infraestructura: toda la interacción con `app` (documento/selección, `geometricBounds`, agrupar/desagrupar, crear guías y marcos de texto, medir en mm).
 
 ### maquetacion/
-- **`RepeticionDeCuadrantes.jsx`** — duplicación geométrica. API pública: `duplicarVertical` (Media Carta) y `duplicarEnCuadrantes` (4-up Cuarto Carta). Internos: `duplicarHorizontal` y `rotarMediaVueltaConCorreccion` (180° + corrección de posición) — los usa `duplicarEnCuadrantes`, no se exponen.
-- **`MaquetarMediaCarta.jsx`** — caso de uso Media Carta: valida que el elemento esté en la mitad superior, **luego** traza la guía horizontal y lo duplica a la mitad inferior sin rotar. Devuelve `[copia]` o `null` si la validación falla. API pública: `procesarElemento`, `validarObjetoBase`.
-- **`MaquetarCuartoCarta.jsx`** — caso de uso Cuarto Carta: valida que el elemento esté en el cuadrante superior izquierdo, **luego** traza ambos ejes y lo replica en los 4 cuadrantes (inferiores rotados 180°). Devuelve el array de copias o `null`. API pública simétrica con Media Carta: `procesarElemento`, `validarObjetoBase`. *(Validar antes de trazar evita dejar guías huérfanas si la posición es inválida.)*
-- **`MaquetacionPorCategoria.jsx`** — despachador. Para selección única mide/clasifica el elemento directo; para selección múltiple lo **agrupa temporalmente**, mide el bounding box combinado, clasifica y, al terminar, **desagrupa el grupo y todas las copias** para no penalizar el rendimiento de impresión. Valida que la selección esté dentro de la página antes de procesar. Enruta al handler via el **registro `MANEJADORES`** (`categoría → función`). Cada caso se procesa con try-catch.
-- **Para agregar un nuevo formato**: (1) crear `MaquetarNuevoFormato.jsx` en `maquetacion/`, (2) agregar el tamaño en `catalogoDeFormatos.js`, (3) registrar `MANEJADORES[CatalogoDeFormatos.NUEVO.nombre] = MaquetarNuevoFormato.procesarElemento` en `MaquetacionPorCategoria`, (4) incluir el `.jsx` en `maquetar.jsx` antes del despachador.
+- **`RepeticionDeCuadrantes.jsx`** — duplicación geométrica. API pública: `duplicarVertical(obj, pagina, ejeY?)` y `duplicarEnCuadrantes(obj, pagina, ejeY?)` — el `ejeY` opcional (en puntos) es la línea de plegado horizontal; si se omite, usa el centro. Internos: `duplicarHorizontal` y `rotarMediaVueltaConCorreccion` — los usa `duplicarEnCuadrantes`, no se exponen.
+- **`MaquetarCompleto.jsx`** — variante **completo** (1-up): no duplica nada; solo dibuja las guías de verificación del papel (Tamaño 14 → corte en 274). Devuelve `[]`. API: `procesarElemento(obj, pagina, papel)`.
+- **`MaquetarMedia.jsx`** — variante **media** (2-up): valida que el elemento esté sobre el eje de plegado, traza la guía de plegado + verificación, y duplica a la mitad inferior sin rotar. Devuelve `[copia]` o `null`. API: `procesarElemento(obj, pagina, papel)`, `validarObjetoBase`.
+- **`MaquetarCuarto.jsx`** — variante **cuarto** (4-up): valida cuadrante superior izquierdo, traza ambos ejes + verificación, replica en 4 cuadrantes (inferiores rotados 180°). Devuelve el array de copias o `null`. API simétrica con Media. *(Validar antes de trazar evita guías huérfanas.)*
+- **`MaquetacionPorCategoria.jsx`** — despachador. Recibe el **papel** (del modal). Para selección única mide/clasifica directo; para múltiple la **agrupa temporalmente**, mide el bounding box combinado, clasifica la **variante** contra `papel.obtenerCatalogo()` y al terminar **desagrupa todo** (grupo + copias) para no penalizar la impresión. Valida que la selección esté dentro de la página. Enruta vía `MANEJADORES[variante](obj, pagina, papel)`.
+- **Para agregar un nuevo papel** (p. ej. otro autocopiativo): (1) `crearPapel("Nombre", altoMm)` en `papeles.js` + exportarlo, (2) agregar la opción en `SelectorDePapel.jsx`. Las 3 variantes y sus handlers se reutilizan solos.
+- **Para agregar una nueva variante**: (1) crear `MaquetarNueva.jsx` con `procesarElemento(obj, pagina, papel)`, (2) registrar `MANEJADORES[Papeles.VARIANTE.NUEVA] = MaquetarNueva.procesarElemento`, (3) agregar la variante al catálogo de cada papel en `papeles.js`, (4) incluir el `.jsx` antes del despachador.
 
 ### depuracion/
 - **`Depuracion.jsx`** — registro en un array interno `LINEAS`. `mostrar()` crea un text frame debajo de la primera página. Modo `detallada` configurable desde `CONFIG`.
 - **`DepuracionGeometrica.jsx`** — log detallado de bounds, centros, ancho/alto y rotaciones de un objeto y sus elementos internos (solo en modo detallado).
 
+### ui/
+- **`SelectorDePapel.jsx`** — modal ScriptUI (`Window("dialog")`). Lista los papeles con **Tamaño 14 preseleccionado** (configurable por `CONFIG.papelPorDefecto`). Devuelve el papel elegido (`Papeles.TAMANO_*`) o `null` si se cancela. Depende del global `Papeles`.
+
 ### aplicacion/
 - **`ValidacionDeEjecucion.jsx`** — precondiciones: documento abierto + selección existente.
 - **`PresentacionDeResultados.jsx`** — volcado final: registra "--- Fin del proceso ---" y llama a `Depuracion.mostrar()`.
-- **`Aplicacion.jsx`** — orquestador principal: inicia depuración → ejecuta el flujo (dentro de `ejecutarConUnidadesEnPuntos`) → finaliza, con try-catch global para errores fatales.
+- **`Aplicacion.jsx`** — orquestador principal: inicia depuración → valida → **muestra el modal de papel** (si se cancela, termina) → ejecuta el flujo con el papel elegido (dentro de `ejecutarConUnidadesEnPuntos`) → finaliza, con try-catch global.
 
 ## Convenciones de nomenclatura
 
@@ -148,7 +161,7 @@ Si un `#include` falla (p. ej. en InDesign 2025 o anterior que no lo soporte des
 - **Variables/miembros privados**: `camelCase`. Prefijo opcional `_` para indicar privacidad dentro del módulo.
 - **Funciones**: verbos en `camelCase` que describan la acción: `calcularCentroHorizontal`, `crearGuiaHorizontal`, `aplicarAccionSegunCategoria`.
 - **Constantes**: `MAYUSCULAS_CON_GUIONES` o PascalCase según el caso (`CARTA`, `ORIENTACION_HORIZONTAL`).
-- **Módulos/contextos**: PascalCase con verbo o sustantivo: `AdaptadorInDesign`, `ClasificacionDeFormato`, `MaquetarCuartoCarta`. El nombre debe describir lo que hace (p. ej. `CatalogoDeFormatos`, no `CalculoDeMedidas`).
+- **Módulos/contextos**: PascalCase con verbo o sustantivo: `AdaptadorInDesign`, `ClasificacionDeFormato`, `MaquetarCuarto`, `SelectorDePapel`. El nombre debe describir lo que hace (p. ej. `CatalogoDeFormatos`, no `CalculoDeMedidas`).
 
 ## Manejo de enumeradores de InDesign
 
@@ -169,7 +182,7 @@ function obtenerOrientacionHorizontal() {
 - **No mezclar unidades** en operaciones de coordenadas. Preferir forzar a puntos temporalmente con `Unidades.ejecutarConUnidadesEnPuntos()`.
 - `Page.bounds` retorna en las unidades actuales de regla (no necesariamente mm).
 - `guide.location`, `geometricBounds`, `page.bounds` deben leerse/escribirse en la **misma** unidad para ser consistentes.
-- La conversión a mm solo ocurre en `medirElementoEnMilimetros()` para alimentar el clasificador; nunca se usa para posicionar guías.
+- `medirElementoEnMilimetros()` convierte a mm para alimentar el clasificador. A la inversa, `Unidades.convertirMilimetrosAPuntos()` posiciona guías en una medida absoluta en mm (eje de plegado 137 y verificación 274 del Tamaño 14) — siempre dentro del bloque forzado a puntos.
 
 ## Flujo de Aplicacion.ejecutar
 
@@ -178,11 +191,12 @@ iniciarDepuracion
   └── configurar(CONFIG) + limpiar + cabecera
 ejecutarFlujoPrincipal
   └── ValidacionDeEjecucion.validar → si falla: return
+  └── SelectorDePapel.elegir(papelPorDefecto) → modal; si cancela: return
   └── ejecutarConUnidadesEnPuntos (forzar reglas a puntos)
-        └── MaquetacionPorCategoria.procesar(CONFIG)
-              └── por cada elemento: medir → clasificar → enrutar al caso de uso
+        └── MaquetacionPorCategoria.procesar(CONFIG, papel)
+              └── medir selección → clasificar variante → enrutar al handler con el papel
 finalizarDepuracion
-  └── PresentacionDeResultados.mostrar → text frame bajo la página
+  └── PresentacionDeResultados.mostrar → text frame bajo la página (si CONFIG.depuracion.mostrar)
 (try-catch global captura errores fatales)
 ```
 

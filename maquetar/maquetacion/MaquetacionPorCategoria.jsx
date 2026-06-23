@@ -1,40 +1,39 @@
 var MaquetacionPorCategoria = (function() {
 
     var MANEJADORES = {};
-    MANEJADORES[CatalogoDeFormatos.MEDIA_CARTA.nombre]   = MaquetarMediaCarta.procesarElemento;
-    MANEJADORES[CatalogoDeFormatos.CUARTO_CARTA.nombre]  = MaquetarCuartoCarta.procesarElemento;
+    MANEJADORES[Papeles.VARIANTE.COMPLETO] = MaquetarCompleto.procesarElemento;
+    MANEJADORES[Papeles.VARIANTE.MEDIA]    = MaquetarMedia.procesarElemento;
+    MANEJADORES[Papeles.VARIANTE.CUARTO]   = MaquetarCuarto.procesarElemento;
 
-    function analizarElemento(obj, tolerancias) {
+    function analizarElemento(obj, papel, tolerancias) {
         var dimensiones = AdaptadorInDesign.medirElementoEnMilimetros(obj);
-        var categoria = ClasificacionDeFormato.clasificar(dimensiones, tolerancias);
+        var variante = ClasificacionDeFormato.clasificar(dimensiones, tolerancias, papel.obtenerCatalogo());
 
-        Depuracion.registrar("  Medidas: " + dimensiones.ancho.toFixed(1) + " x " + dimensiones.alto.toFixed(1) + " mm  →  " + (categoria || "sin categoría"));
-
-        var cat = CatalogoDeFormatos;
-        Depuracion.registrarDetalle("  Catalogo — Media Carta: " + cat.MEDIA_CARTA.ancho.toFixed(1) + "x" + cat.MEDIA_CARTA.alto.toFixed(1) + "  Cuarto Carta: " + cat.CUARTO_CARTA.ancho.toFixed(1) + "x" + cat.CUARTO_CARTA.alto.toFixed(1) + " (tol ±" + tolerancias.horizontal + "mm)");
+        Depuracion.registrar("  Medidas: " + dimensiones.ancho.toFixed(1) + " x " + dimensiones.alto.toFixed(1) + " mm  →  " + (variante || "sin variante"));
+        Depuracion.registrarDetalle("  Papel " + papel.nombre + " — eje plegado " + papel.ejeHorizontalMm + "mm, verificación [" + papel.verificacionMm.join(",") + "] (tol ±" + tolerancias.horizontal + "mm)");
 
         return {
             dimensiones: dimensiones,
-            categoria: categoria
+            variante: variante
         };
     }
 
-    function aplicarAccionSegunCategoria(resultado, obj, pagina) {
-        var categoria = resultado.categoria;
+    function aplicarAccionSegunVariante(resultado, obj, pagina, papel) {
+        var variante = resultado.variante;
 
-        if (categoria === null) {
-            Depuracion.registrar("  Elemento sin categoría (" + Math.round(resultado.dimensiones.ancho) + "x" + Math.round(resultado.dimensiones.alto) + " mm)");
+        if (variante === null) {
+            Depuracion.registrar("  Sin variante (" + Math.round(resultado.dimensiones.ancho) + "x" + Math.round(resultado.dimensiones.alto) + " mm)");
             return null;
         }
 
-        var manejador = MANEJADORES[categoria];
+        var manejador = MANEJADORES[variante];
         if (!manejador) {
-            Depuracion.registrar("  Categoría sin manejador: " + categoria);
+            Depuracion.registrar("  Variante sin manejador: " + variante);
             return null;
         }
 
-        Depuracion.registrar("  Clasificado como: " + categoria);
-        return manejador(obj, pagina);
+        Depuracion.registrar("  Variante: " + variante);
+        return manejador(obj, pagina, papel);
     }
 
     function convertirSeleccionEnArray(seleccion) {
@@ -55,11 +54,11 @@ var MaquetacionPorCategoria = (function() {
         }
     }
 
-    function procesar(config) {
+    function procesar(config, papel) {
         var seleccion = AdaptadorInDesign.obtenerSeleccion();
         var pagina = AdaptadorInDesign.obtenerPaginaActiva();
 
-        Depuracion.registrar("Seleccion: " + seleccion.length + " elemento(s)");
+        Depuracion.registrar("Papel: " + papel.nombre + " | Selección: " + seleccion.length + " elemento(s)");
 
         if (seleccion.length === 0) return;
 
@@ -74,8 +73,8 @@ var MaquetacionPorCategoria = (function() {
             }
 
             try {
-                var resultado = analizarElemento(obj, config.tolerancias);
-                aplicarAccionSegunCategoria(resultado, obj, pagina);
+                var resultado = analizarElemento(obj, papel, config.tolerancias);
+                aplicarAccionSegunVariante(resultado, obj, pagina, papel);
             } catch (e) {
                 Depuracion.registrar("  Error al procesar: " + e.toString());
             }
@@ -83,7 +82,7 @@ var MaquetacionPorCategoria = (function() {
         }
 
         // Múltiples elementos: agrupar temporalmente para medir el bounding box
-        // combinado y clasificar correctamente antes de despachar al handler.
+        // combinado y clasificar la variante antes de despachar al handler.
         Depuracion.registrar("  Agrupando " + seleccion.length + " elementos para clasificar...");
         var grupo = AdaptadorInDesign.agruparElementos(convertirSeleccionEnArray(seleccion));
 
@@ -95,8 +94,8 @@ var MaquetacionPorCategoria = (function() {
                 return;
             }
 
-            var resultado = analizarElemento(grupo, config.tolerancias);
-            var copias = aplicarAccionSegunCategoria(resultado, grupo, pagina);
+            var resultado = analizarElemento(grupo, papel, config.tolerancias);
+            var copias = aplicarAccionSegunVariante(resultado, grupo, pagina, papel);
 
             if (!copias) {
                 Depuracion.registrar("  Procesamiento no exitoso. Desagrupando para restaurar la selección original.");
