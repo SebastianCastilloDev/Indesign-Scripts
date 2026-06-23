@@ -63,12 +63,12 @@ var MaquetarCuartoCarta = (function() {
         var error = validarObjetoBase(obj, pagina);
         if (error !== null) {
             alert(error);
-            return false;
+            return null;
         }
 
-        var repeticiones = RepeticionDeCuadrantes.duplicarEnCuadrantes(obj, pagina);
+        var rep = RepeticionDeCuadrantes.duplicarEnCuadrantes(obj, pagina);
         Depuracion.registrar("Elemento duplicado: superior derecho sin rotar; cuadrantes inferiores con rotación de 180 grados.");
-        return true;
+        return [rep.superiorDerecho, rep.inferiorIzquierdo, rep.inferiorDerecho];
     }
 
     function procesar(config) {

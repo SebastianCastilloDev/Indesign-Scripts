@@ -24,13 +24,13 @@ var MaquetacionPorCategoria = (function() {
 
         if (categoria === null) {
             Depuracion.registrar("  Elemento sin categoría (" + Math.round(resultado.dimensiones.ancho) + "x" + Math.round(resultado.dimensiones.alto) + " mm)");
-            return false;
+            return null;
         }
 
         var manejador = MANEJADORES[categoria];
         if (!manejador) {
             Depuracion.registrar("  Categoría sin manejador: " + categoria);
-            return false;
+            return null;
         }
 
         Depuracion.registrar("  Clasificado como: " + categoria);
@@ -41,6 +41,21 @@ var MaquetacionPorCategoria = (function() {
         var arr = [];
         for (var i = 0; i < seleccion.length; i++) arr.push(seleccion[i]);
         return arr;
+    }
+
+    function estaFueraDePagina(obj, pagina) {
+        var bo = Bounds.deObjeto(obj);
+        var bp = Bounds.dePagina(pagina);
+        return bo.right <= bp.left || bo.left >= bp.right ||
+               bo.bottom <= bp.top || bo.top  >= bp.bottom;
+    }
+
+    function desagruparSeguro(obj) {
+        try {
+            AdaptadorInDesign.desagruparElemento(obj);
+        } catch (e) {
+            Depuracion.registrar("  No se pudo desagrupar: " + e.toString());
+        }
     }
 
     function procesar(config) {
@@ -54,6 +69,13 @@ var MaquetacionPorCategoria = (function() {
         if (seleccion.length === 1) {
             var obj = seleccion[0];
             Depuracion.registrar("Elemento: " + (obj.constructor.name || "desconocido"));
+
+            if (estaFueraDePagina(obj, pagina)) {
+                Depuracion.registrar("  Elemento fuera de la página.");
+                alert("La selección está fuera de la página.\nMuévela dentro de la página antes de ejecutar el script.");
+                return;
+            }
+
             try {
                 var resultado = analizarElemento(obj, config.tolerancias);
                 aplicarAccionSegunCategoria(resultado, obj, pagina);
@@ -70,15 +92,24 @@ var MaquetacionPorCategoria = (function() {
 
         try {
             var resultado = analizarElemento(grupo, config.tolerancias);
-            var exito = aplicarAccionSegunCategoria(resultado, grupo, pagina);
+            var copias = aplicarAccionSegunCategoria(resultado, grupo, pagina);
 
-            if (!exito) {
+            if (!copias) {
                 Depuracion.registrar("  Procesamiento no exitoso. Desagrupando para restaurar la selección original.");
-                try { AdaptadorInDesign.desagruparElemento(grupo); } catch (e2) {}
+                desagruparSeguro(grupo);
+                return;
+            }
+
+            // Desagrupar el grupo original y todas las copias para que quede
+            // todo suelto, igual que antes de ejecutar el script.
+            Depuracion.registrar("  Desagrupando grupos temporales para optimizar rendimiento de impresión...");
+            desagruparSeguro(grupo);
+            for (var i = 0; i < copias.length; i++) {
+                desagruparSeguro(copias[i]);
             }
         } catch (e) {
             Depuracion.registrar("  Error al procesar grupo: " + e.toString());
-            try { AdaptadorInDesign.desagruparElemento(grupo); } catch (e2) {}
+            desagruparSeguro(grupo);
         }
     }
 

@@ -19,12 +19,12 @@ var MaquetarMediaCarta = (function() {
         var error = validarObjetoBase(obj, pagina);
         if (error !== null) {
             alert(error);
-            return false;
+            return null;
         }
 
-        RepeticionDeCuadrantes.duplicarVertical(obj, pagina);
+        var copia = RepeticionDeCuadrantes.duplicarVertical(obj, pagina);
         Depuracion.registrar("Elemento Media Carta duplicado hacia la mitad inferior sin rotación.");
-        return true;
+        return [copia];
     }
 
     return {
